@@ -1,0 +1,447 @@
+---
+title: "QC and filtering"
+author: "Hailey Sounart"
+date: "8/15/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
+```
+
+```{r load packages}
+   library(STutility)
+  library(hdf5r)
+  library(imager)
+  library(akima)
+  library(plotly)
+  library(raster)
+  library(dplyr)
+  library(magrittr)
+  library(ggplot2)
+  library(imager) 
+  library(magrittr)
+  library(RColorBrewer)
+  library(stringr)
+  library(openxlsx)
+  library(hash)
+  library(readxl)
+  library(purrr)
+  library(harmony)
+  library(DESeq2)
+  library(performance)
+  library(Hmisc)
+  library(corrplot)
+  library(pheatmap)
+  library(performance)
+  library(cowplot)
+  library(ggpubr)
+```
+
+```{r set working directory}
+
+setwd("<path to working directory where count matrices for all samples reside>")
+``` 
+
+## Load pre-filtered object, contains metadata
+
+## Read in Object
+
+``` {r read in labeled object}
+
+all_section_QC <- readRDS("bmalayi.pre.filtered.rds")
+all_section_QC
+```
+
+## Remove Wolbachia (wBm) from count matrix
+
+``` {r get wBm gene list}
+
+#load in wBm genes
+wBm_all_gene_list <- readRDS("wBm_all_genes/all_wBm_genes.rds") #refhook = NULL
+length(wBm_all_gene_list)
+
+all_section_QC_wBm <- intersect(rownames(all_section_QC), wBm_all_gene_list)
+all_section_QC_wBm
+
+all_section_QC_wBm_obj <- SubsetSTData(all_section_QC, features = all_section_QC_wBm)
+all_section_QC_wBm_obj
+
+```
+
+``` {r get bmalayi genes}
+
+#load in wBm genes
+bmalayi_all_gene_list <- readRDS("bmalayi_all_genes/bmalayi_genes.rds")
+length(bmalayi_all_gene_list)
+
+all_section_QC_bmalayi <- intersect(rownames(all_section_QC), bmalayi_all_gene_list)
+length(all_section_QC_bmalayi)
+
+all_section_QC_bmalayi_obj <- SubsetSTData(all_section_QC, features = all_section_QC_bmalayi)
+all_section_QC_bmalayi_obj
+
+
+```
+
+
+## Remove genes with 0 counts
+
+``` {r remove genes}
+
+#min.gene.count
+nUMI_filt = Matrix::rowSums(all_section_QC_bmalayi_obj@assays$RNA@counts)
+gene_umi_count <- rownames(all_section_QC_bmalayi_obj@assays$RNA[(nUMI_filt >= 1),])
+
+all_section_QC_bmalayi_obj.gene.filt <- SubsetSTData(all_section_QC_bmalayi_obj, features = gene_umi_count)
+
+cat("Genes removed: ", nrow(all_section_QC_bmalayi_obj) - nrow(all_section_QC_bmalayi_obj.gene.filt), "\n")
+cat("Genes remaining: ", nrow(all_section_QC_bmalayi_obj.gene.filt), "\n")
+cat("Percent genes remaining: ", ((nrow(all_section_QC_bmalayi_obj.gene.filt)/nrow(all_section_QC_bmalayi_obj))*100), "\n")
+
+all_section_QC_bmalayi_obj.gene.filt
+
+```
+
+Check metadata
+``` {r check metadata}
+
+all_section_QC_bmalayi_obj.gene.filt@meta.data
+
+```
+
+## Violin plots - per sample
+
+```{r violin plots sample}
+
+sample_levels <- c("BM1","BM2","BM3")
+all_section_QC_bmalayi_obj.gene.filt@meta.data$worm_sample <- factor(x = all_section_QC_bmalayi_obj.gene.filt@meta.data$worm_sample, levels = sample_levels)
+
+``` 
+
+
+```{r violin plots sample 2}
+
+fill <- c("#AEC7E8","#009E73","#0072B2")
+
+bmalayi_vlnplot_unique_gene_sample_no_pt <- VlnPlot(all_section_QC_bmalayi_obj.gene.filt, features = c("nFeature_RNA"), split.by = "worm_sample", group.by = "worm_sample", cols = fill, pt.size = 0)
+bmalayi_vlnplot_umi_sample_no_pt  <- VlnPlot(all_section_QC_bmalayi_obj.gene.filt, features = c("nCount_RNA"), split.by = "worm_sample", group.by = "worm_sample", cols = fill, pt.size = 0)
+
+``` 
+
+```{r violin plots sample 3}
+
+dir.create(paste0("qc_plots"))
+
+ggsave(file = "qc_plots/bmalayi_violin_plot_umis_raw_ctrl_no_pt.pdf", plot = bmalayi_vlnplot_umi_sample_no_pt, dpi = 300)
+ggsave(file = "qc_plots/bmalayi_violin_plot_genes_raw_ctrl_no_pt.pdf", plot = bmalayi_vlnplot_unique_gene_sample_no_pt, dpi = 300)
+
+``` 
+
+## Violin plots - per section
+
+```{r violin plots section}
+unique(all_section_QC_bmalayi_obj.gene.filt@meta.data$sample_section)
+length(unique(all_section_QC_bmalayi_obj.gene.filt@meta.data$sample_section))
+section_levels <- c("BM1_1","BM1_2","BM1_3","BM1_4","BM1_5","BM1_6","BM1_7","BM1_8","BM1_9","BM2_2","BM2_3","BM2_4","BM2_5","BM2_6","BM2_7","BM2_8","BM2_9","BM2_10","BM2_11","BM2_12","BM3_1","BM3_2","BM3_3","BM3_4","BM3_7","BM3_8","BM3_9","BM3_10","BM3_11","BM3_12")
+all_section_QC_bmalayi_obj.gene.filt@meta.data$sample_section <- factor(x = all_section_QC_bmalayi_obj.gene.filt@meta.data$sample_section, levels = section_levels)
+
+``` 
+
+```{r violin plots section 2}
+
+fill_3 <- c("#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2")
+
+
+bmalayi_vlnplot_unique_gene_section_no_pt <- VlnPlot(all_section_QC_bmalayi_obj.gene.filt, features = c("nFeature_RNA"), split.by = "sample_section", group.by = "sample_section", cols = fill_3, pt.size = 0)
+bmalayi_vlnplot_umi_section_no_pt  <- VlnPlot(all_section_QC_bmalayi_obj.gene.filt, features = c("nCount_RNA"), split.by = "sample_section", group.by = "sample_section", cols = fill_3, pt.size = 0)
+
+bmalayi_vlnplot_unique_gene_section_no_pt
+bmalayi_vlnplot_umi_section_no_pt
+
+``` 
+
+```{r violin plots section 3}
+
+ggsave(file = "qc_plots/bmalayi_violin_plot_umis_raw_ctr_sectionl_no_pt.pdf", plot = bmalayi_vlnplot_umi_section_no_pt, dpi = 300, height = 400, width = 600, units = "mm")
+ggsave(file = "qc_plots/bmalayi_violin_plot_genes_raw_ctrl_section_no_pt.pdf", plot = bmalayi_vlnplot_unique_gene_section_no_pt, dpi = 300, height = 400, width = 600, units = "mm")
+
+``` 
+
+## Correlation plots - per sample
+
+```{r corr plots sample}
+
+
+umis.all.avg <- all_section_QC_bmalayi_obj.gene.filt@assays$RNA@counts
+sum.expr.all.avg <- lapply(unique(all_section_QC_bmalayi_obj.gene.filt$worm_sample), function(treat) {
+  umis_subset.all.avg <- umis.all.avg[, all_section_QC_bmalayi_obj.gene.filt$worm_sample %in% treat]  #subset counts dataframe
+  print(class(umis_subset.all.avg))
+  log1p(Matrix::rowMeans(umis_subset.all.avg)) #log1p(Matrix::rowMeans(umis_subset2))
+})
+
+sum.expr.all.avg <- as.data.frame(sum.expr.all.avg)
+colnames(sum.expr.all.avg) <- unique(all_section_QC_bmalayi_obj.gene.filt$worm_sample)
+worm_sample_raw_unfil_df <- sum.expr.all.avg
+worm_sample_raw_unfil_df
+```
+
+Control worm sample comparisons
+```{r corr plots sample 2}
+
+
+colnames(worm_sample_raw_unfil_df) <- c("BM1", "BM2","BM3")
+worm_sample_raw_unfil_df
+
+
+p1 <- ggplot(worm_sample_raw_unfil_df, aes(BM1, BM2)) + geom_point(alpha = 1,colour = "#009E73") + stat_cor(method = "pearson", label.x = 0, label.y = 3.7) + geom_smooth(method = "lm", fullrange=TRUE, color="#009E73", se = TRUE, level = 0.95)  + theme_minimal() + labs(title="Average gene expression between samples",
+       x="BM1 (log (1 + avg raw UMI counts per spot))", y = "BM2 (log (1 + avg raw UMI counts per spot))")#+ ggtitle("Blah") 
+
+p2 <- ggplot(worm_sample_raw_unfil_df, aes(BM1, BM3)) + geom_point(colour = "#009E73",alpha = 1) + stat_cor(method = "pearson", label.x = 0, label.y = 3.7) + geom_smooth(method = "lm", fullrange=TRUE, color="#009E73", se = TRUE, level = 0.95) + theme_minimal() + labs(title="Average gene expression between samples",
+       x="BM1 (log (1 + avg raw UMI counts per spot))", y = "BM3 (log (1 + avg raw UMI counts per spot))")
+
+p3 <- ggplot(worm_sample_raw_unfil_df, aes(BM2, BM3)) + geom_point(colour = "#009E73",alpha = 1) + stat_cor(method = "pearson", label.x = 0, label.y = 3.7) + geom_smooth(method = "lm", fullrange=TRUE, color="#009E73", se = TRUE, level = 0.95) + theme_minimal() + labs(title="Average gene expression between samples",
+       x="BM2 (log (1 + avg raw UMI counts per spot))", y = "BM3 (log (1 + avg raw UMI counts per spot))")
+
+
+ggsave(file = "qc_plots/bmalayi_corr_worm_raw_unfilt_1_2.pdf", plot = p1, dpi = 300)
+ggsave(file = "qc_plots/bmalayi_corr_worm_raw_unfilt_1_3.pdf", plot = p2, dpi = 300)
+ggsave(file = "qc_plots/bmalayi_corr_worm_raw_unfilt_2_3.pdf", plot = p3, dpi = 300)
+
+
+``` 
+
+## Correlation plots - per section
+
+```{r corr plots section}
+
+
+umis.all.avg <- all_section_QC_bmalayi_obj.gene.filt@assays$RNA@counts
+sum.expr.all.avg <- lapply(unique(all_section_QC_bmalayi_obj.gene.filt$sample_section), function(treat) {
+  umis_subset.all.avg <- umis.all.avg[, all_section_QC_bmalayi_obj.gene.filt$sample_section %in% treat]  #subset counts dataframe
+  print(class(umis_subset.all.avg))
+  log1p(Matrix::rowMeans(umis_subset.all.avg))
+})
+
+sum.expr.all.avg <- as.data.frame(sum.expr.all.avg)
+colnames(sum.expr.all.avg) <- unique(all_section_QC_bmalayi_obj.gene.filt$sample_section)
+worm_sample_raw_unfil_df <- sum.expr.all.avg
+worm_sample_raw_unfil_df
+```
+
+Control worm section comparisons - all worms
+```{r corr plots section 2}
+
+dir.create(paste0("qc_plots/sections"))
+
+colnames(worm_sample_raw_unfil_df) <- c("BM1_1","BM1_2","BM1_3","BM1_4","BM1_5","BM1_6","BM1_7","BM1_8","BM1_9","BM2_2","BM2_3","BM2_4","BM2_5","BM2_6","BM2_7","BM2_8","BM2_9","BM2_10","BM2_11","BM2_12","BM3_1","BM3_2","BM3_3","BM3_4","BM3_7","BM3_8","BM3_9","BM3_10","BM3_11","BM3_12")
+worm_sample_raw_unfil_df
+
+for (i in colnames(worm_sample_raw_unfil_df)) {
+  first_section <- i
+  first_section <- noquote(first_section)
+  print(first_section)
+
+  for (j in colnames(worm_sample_raw_unfil_df)){ 
+    
+    second_section <- noquote(j)
+    print(second_section)
+    
+    p <- aes_(as.name(first_section), as.name(second_section))
+    print(p)
+    
+    p <- ggplot(worm_sample_raw_unfil_df, aes_(as.name(first_section),as.name(second_section))) + geom_point(alpha = 1,colour = "#009E73") + stat_cor(method = "pearson", label.x = 0, label.y = 3.7) + geom_smooth(method = "lm", fullrange=TRUE, color="#009E73", se = TRUE, level = 0.95)  + theme_minimal() + labs(title="Average gene expression between sections",           x=paste0(first_section, " (log (1 + avg raw UMI counts per spot))"), y = paste0(second_section, " (log (1 + avg raw UMI counts per spot))"))
+
+    ggsave(file = paste0("qc_plots/sections/bmalayi_corr_worm_raw_unfilt_", first_section, "_", second_section, ".pdf"), plot = p, dpi = 300)
+  }
+}
+
+``` 
+
+## Load protein coding genes, no ribo, no mito
+```{r load protein genes}
+
+bmalayi_protein_coding.no.ribo.no.mito <- readRDS("bmalayi_protein_coding_no_ribo_no_mito/bmalayi_protein_coding.no.ribo.no.mito.rds")
+length(bmalayi_protein_coding.no.ribo.no.mito)
+
+``` 
+
+## Keep only protein coding genes (no mito and no ribo)
+
+```{r keep only protein coding genes}
+
+all_section_QC_bmalayi_obj.gene.filt
+
+all_section_QC_bmalayi_obj.protein.coding.no.ribo.no.mito <- SubsetSTData(all_section_QC_bmalayi_obj.gene.filt, features = rownames(all_section_QC_bmalayi_obj.gene.filt)[(rownames(all_section_QC_bmalayi_obj.gene.filt) %in% bmalayi_protein_coding.no.ribo.no.mito)])
+
+all_section_QC_bmalayi_obj.protein.coding.no.ribo.no.mito
+
+``` 
+
+## Filter spots 
+
+Filter low quality spots
+```{r filter spots}
+
+bmalayi_obj.spot.filt <- SubsetSTData(all_section_QC_bmalayi_obj.protein.coding.no.ribo.no.mito, expression = nFeature_RNA >= 30 & nCount_RNA >= 50 & percent.mito < 3 & percent.ribo < 30 & nCount_RNA < 10000) #& percent.mito < 10 & percent.ribo < 40
+cat("Spots removed: ", ncol(all_section_QC_bmalayi_obj.protein.coding.no.ribo.no.mito) - ncol(bmalayi_obj.spot.filt), "\n")
+cat("Spots remaining: ", ncol(bmalayi_obj.spot.filt), "\n")
+cat("Percent Spots remaining: ", (ncol(bmalayi_obj.spot.filt)/ncol(all_section_QC_bmalayi_obj.protein.coding.no.ribo.no.mito)*100), "\n")
+
+bmalayi_obj.spot.filt
+
+```
+
+## Filter genes
+
+Filter based on number of spots per gene & total UMI counts per gene.
+```{r filter genes}
+
+#min.gene.spots
+nSpots_filt = Matrix::rowSums(bmalayi_obj.spot.filt@assays$RNA@counts > 0)
+gene_spot_count <- rownames(bmalayi_obj.spot.filt@assays$RNA[(nSpots_filt >= 1),])
+  
+#min.gene.count
+nUMI_filt = Matrix::rowSums(bmalayi_obj.spot.filt@assays$RNA@counts)
+gene_umi_count <- rownames(bmalayi_obj.spot.filt@assays$RNA[(nUMI_filt >= 1),])
+
+bmalayi_obj.spot.gene.filt <- SubsetSTData(bmalayi_obj.spot.filt, features = gene_umi_count)
+bmalayi_obj.spot.gene.filt <-SubsetSTData(bmalayi_obj.spot.gene.filt, features = gene_spot_count)
+
+cat("Genes removed: ", nrow(bmalayi_obj.spot.filt) - nrow(bmalayi_obj.spot.gene.filt), "\n")
+cat("Genes remaining: ", nrow(bmalayi_obj.spot.gene.filt), "\n")
+cat("Percent genes remaining: ", ((nrow(bmalayi_obj.spot.gene.filt)/nrow(bmalayi_obj.spot.filt))*100), "\n")
+
+
+bmalayi_obj.spot.gene.filt
+
+```
+
+## Re-calc metadata
+
+```{r load gene lists, all spots 1, fig.width = 10, fig.height = 5, out.height = "100%", out.width = "100%"}
+
+#load in mitochondrial gene list
+bmalayi_mito_gene_list <- readRDS("mitochondrial_genes/bmalayi_mito_genes.rds")
+bmalayi_mito_gene_list
+
+#load in rRNA genes
+bmalayi_rRNA_gene_list <- readRDS("rRNA_genes/bmalayi_rRNA_genes.rds")
+
+#load in ribosomal protein coding genes
+bmalayi_ribo_gene_list <- readRDS("ribosomal_genes/bmalayi_ribo_genes.rds")
+#bmalayi_ribo_gene_list
+
+#combine rRNA and ribosomal protein coding genes into a single list
+bmalayi_all_ribo_list <- c(bmalayi_rRNA_gene_list, bmalayi_ribo_gene_list)
+
+#load in bmalayi protein coding 
+bmalayi_coding_list <- readRDS("all_protein_coding_genes/bmalayi_protein_coding_genes.rds")
+
+#load in bmalayi protein coding, no ribo
+bmalayi_coding_no_ribo_list <- readRDS("bmalayi_protein_coding_no_ribo/bmalayi_protein_coding.no.ribo.rds")
+
+#load in bmalayi protein coding, no mito
+bmalayi_coding_no_mito_list <- readRDS("bmalayi_protein_coding_no_mito/bmalayi_protein_coding.no.mito.rds")
+
+#load in bmalayi protein coding,no ribo and no mito
+bmalayi_coding_no_ribo_no_mito_list <- readRDS("bmalayi_protein_coding_no_ribo_no_mito/bmalayi_protein_coding.no.ribo.no.mito.rds")
+
+```
+
+```{r recalc metadata, all spots 1, fig.width = 10, fig.height = 5, out.height = "100%", out.width = "100%"}
+
+print(sum(bmalayi_obj.spot.gene.filt$percent.mito))
+print(sum(bmalayi_obj.spot.gene.filt$counts.mito))
+
+bmalayi_obj.spot.gene.filt.new <- bmalayi_obj.spot.gene.filt
+
+mito_in_obj <- Reduce(intersect, list(rownames(bmalayi_obj.spot.gene.filt@assays$RNA),bmalayi_mito_gene_list))
+bmalayi_obj.spot.gene.filt.new$percent.mito <- (Matrix::colSums(bmalayi_obj.spot.gene.filt@assays$RNA@counts[mito_in_obj, ])/Matrix::colSums(bmalayi_obj.spot.gene.filt@assays$RNA@counts))*100
+bmalayi_obj.spot.gene.filt.new$counts.mito <- Matrix::colSums(bmalayi_obj.spot.gene.filt.new@assays$RNA@counts[mito_in_obj, ])
+rRNA_in_obj <- Reduce(intersect, list(rownames(bmalayi_obj.spot.gene.filt@assays$RNA),bmalayi_rRNA_gene_list))
+bmalayi_obj.spot.gene.filt.new$percent.rRNA <- (Matrix::colSums(bmalayi_obj.spot.gene.filt@assays$RNA@counts[rRNA_in_obj, ])/Matrix::colSums(bmalayi_obj.spot.gene.filt@assays$RNA@counts))*100
+bmalayi_obj.spot.gene.filt.new$counts.rRNA <- Matrix::colSums(bmalayi_obj.spot.gene.filt.new@assays$RNA@counts[rRNA_in_obj, ])
+ribo_in_obj <- Reduce(intersect, list(rownames(bmalayi_obj.spot.gene.filt@assays$RNA),bmalayi_all_ribo_list))
+bmalayi_obj.spot.gene.filt.new$percent.ribo <- (Matrix::colSums(bmalayi_obj.spot.gene.filt@assays$RNA@counts[ribo_in_obj, ])/Matrix::colSums(bmalayi_obj.spot.gene.filt@assays$RNA@counts))*100
+bmalayi_obj.spot.gene.filt.new$counts.ribo <- Matrix::colSums(bmalayi_obj.spot.gene.filt.new@assays$RNA@counts[ribo_in_obj, ])
+coding_in_obj <- Reduce(intersect, list(rownames(bmalayi_obj.spot.gene.filt@assays$RNA),bmalayi_coding_list))
+bmalayi_obj.spot.gene.filt.new$percent.protein_coding <- (Matrix::colSums(bmalayi_obj.spot.gene.filt@assays$RNA@counts[coding_in_obj, ])/Matrix::colSums(bmalayi_obj.spot.gene.filt@assays$RNA@counts))*100
+bmalayi_obj.spot.gene.filt.new$counts.protein_coding <- Matrix::colSums(bmalayi_obj.spot.gene.filt.new@assays$RNA@counts[coding_in_obj, ])
+coding_no_ribo_in_obj <- Reduce(intersect, list(rownames(bmalayi_obj.spot.gene.filt@assays$RNA),bmalayi_coding_no_ribo_list))
+bmalayi_obj.spot.gene.filt.new$percent.protein_coding_no_ribo <- (Matrix::colSums(bmalayi_obj.spot.gene.filt@assays$RNA@counts[ coding_no_ribo_in_obj, ])/Matrix::colSums(bmalayi_obj.spot.gene.filt@assays$RNA@counts))*100
+bmalayi_obj.spot.gene.filt.new$counts.protein_coding_no_ribo <- Matrix::colSums(bmalayi_obj.spot.gene.filt.new@assays$RNA@counts[ coding_no_ribo_in_obj, ])
+coding_no_mito_in_obj <- Reduce(intersect, list(rownames(bmalayi_obj.spot.gene.filt@assays$RNA),bmalayi_coding_no_mito_list))
+bmalayi_obj.spot.gene.filt.new$percent.protein_coding_no_mito <- (Matrix::colSums(bmalayi_obj.spot.gene.filt@assays$RNA@counts[coding_no_mito_in_obj, ])/Matrix::colSums(bmalayi_obj.spot.gene.filt@assays$RNA@counts))*100
+bmalayi_obj.spot.gene.filt.new$counts.protein_coding_no_mito <- Matrix::colSums(bmalayi_obj.spot.gene.filt.new@assays$RNA@counts[coding_no_mito_in_obj, ])
+coding_no_ribo_no_mito_in_obj <- Reduce(intersect, list(rownames(bmalayi_obj.spot.gene.filt@assays$RNA),bmalayi_coding_no_ribo_no_mito_list))
+bmalayi_obj.spot.gene.filt.new$percent.protein_coding_no_ribo_no_mito <- (Matrix::colSums(bmalayi_obj.spot.gene.filt@assays$RNA@counts[coding_no_ribo_no_mito_in_obj, ])/Matrix::colSums(bmalayi_obj.spot.gene.filt@assays$RNA@counts))*100
+bmalayi_obj.spot.gene.filt.new$counts.protein_coding_no_ribo_no_mito <- Matrix::colSums(bmalayi_obj.spot.gene.filt.new@assays$RNA@counts[coding_no_ribo_no_mito_in_obj, ])
+
+
+print(sum(bmalayi_obj.spot.gene.filt.new$percent.mito))
+print(sum(bmalayi_obj.spot.gene.filt.new$counts.mito))
+bmalayi_obj.spot.gene.filt.new
+
+
+```
+
+## Save spot, gene filt objects
+
+``` {r save filtered bmalayi object}
+
+saveRDS(bmalayi_obj.spot.gene.filt.new, file = "bmalay_filt_obj.rds")
+
+```
+
+## Wolbachia processing
+
+Subset Wolbachia object to only include those spots in the brugia object
+
+```{r filter wBm obj}
+
+unique(all_section_QC_wBm_obj$worm_sample)
+
+bmalayi_obj.spot.gene.filt.spots <- colnames(bmalayi_obj.spot.gene.filt.new@assays$RNA[,])
+length(bmalayi_obj.spot.gene.filt.spots)
+#head(bmalayi_obj.spot.gene.filt.spots)
+
+all_section_QC_wBm_obj.brugia.filt.spots <- SubsetSTData(all_section_QC_wBm_obj, spots = bmalayi_obj.spot.gene.filt.spots)
+
+all_section_QC_wBm_obj.brugia.filt.spots
+
+```
+
+Remove genes with 0 summed UMIs - from R objects
+```{r remove 0 count genes}
+
+#all_section_QC_wBm_obj), rownames(wBm_ctrl_only_no_C10
+
+#min.gene.spots
+nSpots_filt = Matrix::rowSums(all_section_QC_wBm_obj.brugia.filt.spots@assays$RNA@counts > 0)
+gene_spot_count <- rownames(all_section_QC_wBm_obj.brugia.filt.spots@assays$RNA[(nSpots_filt >= 1),])
+  
+#min.gene.count
+nUMI_filt = Matrix::rowSums(all_section_QC_wBm_obj.brugia.filt.spots@assays$RNA@counts)
+gene_umi_count <- rownames(all_section_QC_wBm_obj.brugia.filt.spots@assays$RNA[(nUMI_filt >= 1),])
+
+all_section_QC_wBm_obj.brugia.filt.spots.gene.filt <- SubsetSTData(all_section_QC_wBm_obj.brugia.filt.spots, features = gene_umi_count)
+all_section_QC_wBm_obj.brugia.filt.spots.gene.filt <-SubsetSTData(all_section_QC_wBm_obj.brugia.filt.spots.gene.filt, features = gene_spot_count)
+
+cat("Genes removed: ", nrow(all_section_QC_wBm_obj.brugia.filt.spots) - nrow(all_section_QC_wBm_obj.brugia.filt.spots.gene.filt), "\n")
+cat("Genes remaining: ", nrow(all_section_QC_wBm_obj.brugia.filt.spots.gene.filt), "\n")
+cat("Percent genes remaining: ", ((nrow(all_section_QC_wBm_obj.brugia.filt.spots.gene.filt)/nrow(all_section_QC_wBm_obj.brugia.filt.spots))*100), "\n")
+
+
+all_section_QC_wBm_obj.brugia.filt.spots.gene.filt
+
+
+``` 
+
+## Save Wolbachia objects
+
+```{r save wBm obj}
+
+saveRDS(all_section_QC_wBm_obj.brugia.filt.spots.gene.filt, file = "wBm.filt.rds")
+
+```

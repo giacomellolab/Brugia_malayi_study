@@ -1,0 +1,168 @@
+---
+title: "Clustering and Differential Expression analysis"
+author: "Hailey Sounart"
+date: "8/16/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
+```
+
+```{r load packages}
+  library(STutility)
+  library(hdf5r)
+  library(imager)
+  library(akima)
+  library(plotly)
+  library(raster)
+  library(dplyr)
+  library(magrittr)
+  library(ggplot2)
+  library(imager) 
+  library(magrittr)
+  library(RColorBrewer)
+  library(stringr)
+  library(openxlsx)
+  library(hash)
+  library(readxl)
+  library(purrr)
+  library(harmony)
+```
+
+```{r set working directory}
+
+setwd("<path to working directory where count matrices for all samples reside>")
+``` 
+
+## Read in bmalayi normalized data
+
+``` {r read normalized object}
+
+bmalayi_sctransform_per_sample_norm_obj <- readRDS("bmalay_filt_obj.list.nfeat.merged.rds")
+bmalayi_sctransform_per_sample_norm_obj
+
+```
+
+## Load integration features
+``` {r load integ feats}
+
+bmalayi_sctransform_per_sample_norm_obj_int_feats <- readRDS("bmalay_filt_obj.list.nfeat.integration.features.rds")
+length(bmalayi_sctransform_per_sample_norm_obj_int_feats)
+
+```
+
+## Dimensionality Reduction
+
+PCA
+``` {r dim reduction}
+
+
+bmalayi_sctransform_per_sample_norm_obj.PCA <- RunPCA(object = bmalayi_sctransform_per_sample_norm_obj, assay = "SCT", features = bmalayi_sctransform_per_sample_norm_obj_int_feats)
+
+```
+
+## Harmony (data integration and batch effect removal) if needed
+
+```{r run harmony PCA}
+
+set.seed(23)
+bmalayi_sctransform_per_sample_norm_obj.PCA.harmony <- RunHarmony(object = bmalayi_sctransform_per_sample_norm_obj.PCA, vars_use = c("worm_sample"), group.by.vars = c("worm_sample"), reduction = "pca", assay.use = "SCT", plot_convergence = TRUE, dims.use = 1:10, theta = 0, max.iter.harmony = 80)
+
+``` 
+
+## Clustering 
+
+``` {r clustering, fig.width = 4, fig.height = 4, out.height = "100%", out.width = "100%"}
+
+bmalayi_sctransform_per_sample_norm_obj.PCA.harmony  <- FindNeighbors(object = bmalayi_sctransform_per_sample_norm_obj.PCA.harmony, verbose = FALSE, reduction = "harmony", dims = 1:10, k.param = 10) 
+
+bmalayi_sctransform_per_sample_norm_obj.PCA.harmony <- FindClusters(object = bmalayi_sctransform_per_sample_norm_obj.PCA.harmony, verbose = FALSE, resolution = 0.3) 
+
+bmalayi_sctransform_per_sample_norm_obj.PCA.harmony <- RunUMAP(bmalayi_sctransform_per_sample_norm_obj.PCA.harmony, reduction = "harmony", dims = 1:10)
+
+```
+
+
+## View Clusters
+
+```{r view clusters}
+
+fill=c("#41ab5d","#fc9272","#4292c6","#df65b0")
+
+DimPlot(bmalayi_sctransform_per_sample_norm_obj.PCA.harmony, label = FALSE, cols = fill, pt.size = 3)
+
+```
+## Save PCA, harmony object
+
+``` {r save clustered object}
+
+saveRDS(bmalayi_sctransform_per_sample_norm_obj.PCA.harmony, file = "bmalayi_clusters.rds")
+
+```
+
+## DE analysis - marker genes per cluster
+
+``` {r find cluster markers}
+
+markers_per_clu <- FindAllMarkers(bmalayi_sctransform_per_sample_norm_obj.PCA.harmony, assay = "SCT", logfc.threshold = 0.1)
+markers_per_clu
+
+```
+
+## p val filt
+
+``` {r filt cluster markers}
+
+markers_per_clu_filt <- markers_per_clu[(markers_per_clu$p_val_adj < 0.05),]
+markers_per_clu_filt
+
+```
+
+## combined into DE genes into 1 table
+
+Separate each cluster markers by cluster
+``` {r split cluster markers}
+
+markers_per_clu_filt_list <- split(markers_per_clu_filt, markers_per_clu_filt$cluster)
+markers_per_clu_filt_list
+
+```
+
+Rename genes
+``` {r rename genes}
+markers_per_clu_filt_list_rename <- lapply(markers_per_clu_filt_list, function(i) {
+  rownames(i) <- i$gene
+  i
+})
+markers_per_clu_filt_list_rename
+
+```
+
+```{r merge dataframes 1}
+
+markers_per_clu_filt_list_1_2_rename_merged <- transform(merge(markers_per_clu_filt_list_rename[[1]], markers_per_clu_filt_list_rename[[2]],by="row.names",all.x=TRUE,all.y=TRUE), row.names=Row.names, Row.names=NULL) #,all.y=TRUE
+markers_per_clu_filt_list_1_2_rename_merged
+
+``` 
+
+```{r merge dataframes 2}
+
+markers_per_clu_filt_list_1_2_3_rename_merged <- transform(merge(markers_per_clu_filt_list_1_2_rename_merged, markers_per_clu_filt_list_rename[[3]],by="row.names",all.x=TRUE,all.y=TRUE), row.names=Row.names, Row.names=NULL) #,all.y=TRUE
+markers_per_clu_filt_list_1_2_3_rename_merged
+
+``` 
+
+```{r merge dataframes 3}
+
+markers_per_clu_filt_list_rename_merged <- transform(merge(markers_per_clu_filt_list_1_2_3_rename_merged, markers_per_clu_filt_list_rename[[4]],by="row.names",all.x=TRUE,all.y=TRUE), row.names=Row.names, Row.names=NULL) #,all.y=TRUE
+markers_per_clu_filt_list_rename_merged
+
+``` 
+
+## Save cluster marker genes
+
+``` {r save cluster de marker genes}
+
+write.xlsx(markers_per_clu_filt_list_rename_merged , file = "clus_de_genes_p0.05.xlsx", col.names=TRUE, row.names=TRUE)
+```

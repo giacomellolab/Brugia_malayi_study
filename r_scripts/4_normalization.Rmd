@@ -1,0 +1,102 @@
+---
+title: "Normalization"
+author: "Hailey Sounart"
+date: "8/16/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
+```
+
+```{r load packages}
+  library(STutility)
+  library(hdf5r)
+  library(imager)
+  library(akima)
+  library(plotly)
+  library(raster)
+  library(dplyr)
+  library(magrittr)
+  library(ggplot2)
+  library(imager) 
+  library(magrittr)
+  library(RColorBrewer)
+  library(stringr)
+  library(openxlsx)
+  library(hash)
+  library(readxl)
+  library(purrr)
+  library(harmony)
+  library(DESeq2)
+```
+
+```{r set working directory}
+
+setwd("<path to working directory where count matrices for all samples reside>")
+``` 
+
+## Read in Filtered Seurat Objects
+
+Read in filtered object
+``` {r read filt object}
+
+bmalay_filt_obj <- readRDS("bmalay_filt_obj.rds")
+bmalay_filt_obj
+
+```
+
+# Normalize samples separately
+
+First split each worm_sample to be is own object and create a list of worm sample objects
+
+```{r separate worm samples}
+
+bmalay_filt_obj.unique.names <- unique(bmalay_filt_obj$worm_sample)
+bmalay_filt_obj.unique.names
+
+bmalay_filt_obj.list.nfeat <- lapply(bmalay_filt_obj.unique.names, function(i){SubsetSTData(bmalay_filt_obj, expression = (worm_sample == i))})
+
+bmalay_filt_obj.list.nfeat
+```
+
+```{r normalize each sample object separately}
+
+for (i in 1:length(bmalay_filt_obj.list.nfeat)) {
+  bmalay_filt_obj.list.nfeat[[i]] <- SCTransform(bmalay_filt_obj.list.nfeat[[i]], vars.to.regress = "nFeature_RNA", return.only.var.genes = FALSE)
+}
+
+```
+
+## Integration Features
+
+```{r integrate}
+
+bmalay_filt_obj.list.nfeat.integration.features <- SelectIntegrationFeatures(object.list = bmalay_filt_obj.list.nfeat, nfeatures = 7000)
+saveRDS(bmalay_filt_obj.list.nfeat.integration.features, file = "bmalay_filt_obj.list.nfeat.integration.features.rds")
+length(bmalay_filt_obj.list.nfeat.integration.features)
+
+bmalay_filt_obj.list.nfeat.prepsctint <- PrepSCTIntegration(object.list = bmalay_filt_obj.list.nfeat, anchor.features = bmalay_filt_obj.list.nfeat.integration.features, verbose = FALSE)
+
+saveRDS(bmalay_filt_obj.list.nfeat.prepsctint, file = "bmalay_filt_obj.list.nfeat.prepsctint.rds")
+
+```
+
+## Merge samples
+``` {r merge normalized objects}
+
+bmalay_filt_obj.list.nfeat.merged <- MergeSTData(x = bmalay_filt_obj.list.nfeat.prepsctint[[1]], y = bmalay_filt_obj.list.nfeat.prepsctint[2:length(bmalay_filt_obj.list.nfeat.prepsctint)], merge.data = TRUE)
+
+bmalay_filt_obj.list.nfeat.merged@meta.data
+bmalay_filt_obj.list.nfeat.merged
+
+```
+## Save Normalized object
+```{r save normalized object}
+
+#save control normalized data, merged
+bmalay_filt_obj.list.nfeat.merged
+
+saveRDS(bmalay_filt_obj.list.nfeat.merged, file = "bmalay_filt_obj.list.nfeat.merged.rds")
+
+```

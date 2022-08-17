@@ -1,0 +1,421 @@
+---
+title: "Make Brugia malayi and Wolbachia (wBm) gene lists"
+author: "Hailey Sounart"
+date: "8/15/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
+```
+
+```{r load packages}
+  library(STutility)
+  library(hdf5r)
+  library(imager)
+  library(akima)
+  library(plotly)
+  library(raster)
+  library(dplyr)
+  library(magrittr)
+  library(ggplot2)
+  library(imager) 
+  library(magrittr)
+  library(RColorBrewer)
+  library(stringr)
+  library(openxlsx)
+  library(hash)
+  library(readxl)
+  library(purrr)
+  library(harmony)
+  library(tidyr)
+```
+
+```{r set working directory}
+
+setwd("<path to working directory where count matrices for all samples reside>")
+``` 
+
+## Get Brugia malayi genes
+
+```{r read in bmalayi annotation}
+
+#read in the bmalayi annotation file as a table
+all_bmalayi_gene_annotations <- read.table("brugia_malayi.gene_biotype_product.map.tsv", sep="\t", header=T, stringsAsFactors = F)
+all_bmalayi_gene_annotations
+
+```
+
+```{r get all bmalayi genes}
+
+#get gene ids from annotation table
+bmalayi_genes <- all_bmalayi_gene_annotations$gene_id
+
+#add bmalayi- in front so matches syntax of gene names in the count matrices
+bmalayi_genes <- paste("bmalayi-", bmalayi_genes, sep="")
+
+```
+
+## Save brugia malayi all genes list
+
+```{r save rRNA}
+
+length(bmalayi_genes)
+
+dir.create(paste0("bmalayi_all_genes"))
+
+saveRDS(bmalayi_genes, file = "bmalayi_all_genes/bmalayi_genes.rds")
+
+write.csv(bmalayi_genes, file = "bmalayi_all_genes/bmalayi_genes.csv")
+
+write.xlsx(bmalayi_genes, file = "bmalayi_all_genes/bmalayi_genes.xlsx", col.names=TRUE, row.names=TRUE)
+```
+
+
+## Get Brugia malayi rRNA genes
+
+Get a list of rRNA genes
+```{r get rRNA genes}
+
+#get bmalayi genes annotated as rRNA in the biotype column
+bmalayi_rRNA <- (all_bmalayi_gene_annotations$biotype == "rRNA")
+
+#subset bmalayi annotation table for rRNA genes
+bmalayi_rRNA_table <- all_bmalayi_gene_annotations[bmalayi_rRNA,]
+bmalayi_rRNA_table 
+
+#get rRNA gene ids from rRNA annotation table
+bmalayi_rRNA_genes <- bmalayi_rRNA_table$gene_id
+
+#add bmalayi- in front so matches syntax of gene names in the count matrices
+bmalayi_rRNA_genes <- paste("bmalayi-", bmalayi_rRNA_genes, sep="")
+
+```
+
+## Get ribosomal genes
+
+```{r see ribosomal protein coding genes}
+
+#see product column values that contain ribosomal protein coding annotations in the bmalayi annotation table
+
+ribo_string_variations <- c(".*ribosomal.*", ".*Ribosomal.*", ".*ribosome.*", ".*Ribosome.*")
+
+ribo_name_lists <- lapply(1:length(ribo_string_variations), function(i) {grep(pattern = ribo_string_variations[[i]], x = all_bmalayi_gene_annotations$product, value = TRUE)})
+
+```
+
+```{r get ribosomal protein coding genes 1}
+
+#get bmalayi genes annotated as ribosomal in the biotype column
+
+bmalayi_ribo_list <- lapply(1:length(ribo_string_variations), function(i) {str_detect(all_bmalayi_gene_annotations$product, regex(ribo_string_variations[[i]], dotall = TRUE))})
+
+bmalayi_ribo_list_no_na <- lapply(1:length(bmalayi_ribo_list), function(i) {bmalayi_ribo_list[[i]] %>% replace_na(FALSE)})
+```
+
+```{r get ribosomal protein coding genes 2}
+
+#subset annotation table for ribosomal/Ribosomal genes
+
+ribo_table_list <- lapply(1:length(bmalayi_ribo_list_no_na), function(i) {all_bmalayi_gene_annotations[bmalayi_ribo_list_no_na[[i]],]})
+
+ribo_table_list
+
+```
+
+```{r get ribosomal protein coding genes 3}
+
+#get ribo gene lists and add bmalayi- in front so matches syntax of gene names in the count matrices
+
+ribo_genes_list <- lapply(1:length(ribo_table_list), function(i) {ribo_table_list[[i]]$gene_id})
+ribo_genes_list <- lapply(1:length(ribo_genes_list), function(i) {paste("bmalayi-", ribo_genes_list[[i]], sep="")})
+
+```
+
+```{r get ribosomal protein coding genes 4}
+
+#combine ribosomal and Ribosomal gene lists
+
+all_ribo_genes <- unlist(ribo_genes_list, recursive = TRUE, use.names = TRUE)
+
+```
+
+## Save rRNA and ribosomal gene lists
+
+```{r save rRNA genes}
+
+#bmalayi_rRNA_genes
+
+dir.create(paste0("rRNA_genes"))
+
+saveRDS(bmalayi_rRNA_genes, file = "rRNA_genes/bmalayi_rRNA_genes.rds")
+
+write.csv(bmalayi_rRNA_genes, file = "rRNA_genes/bmalayi_rRNA_genes.csv")
+
+write.xlsx(bmalayi_rRNA_genes, file = "rRNA_genes/bmalayi_rRNA_genes.xlsx", col.names=TRUE, row.names=TRUE)
+```
+
+```{r save ribosomal genes}
+
+#all_ribo_genes
+
+dir.create(paste0("ribosomal_genes"))
+
+saveRDS(all_ribo_genes, file = "ribosomal_genes/bmalayi_ribo_genes.rds")
+
+write.csv(all_ribo_genes, file = "ribosomal_genes/bmalayi_ribo_genes.csv")
+
+write.xlsx(all_ribo_genes, file = "ribosomal_genes/bmalayi_ribo_genes.xlsx", col.names=TRUE, row.names=TRUE)
+
+```
+
+## Combine rRNA and ribosomal genes into a single list
+```{r save ribosomal genes}
+
+bmalayi_rRNA_ribo_genes <- c(bmalayi_rRNA_genes, all_ribo_genes)
+#bmalayi_rRNA_ribo_genes
+
+dir.create(paste0("rRNA_and_ribo_genes"))
+
+saveRDS(bmalayi_rRNA_ribo_genes, file = "rRNA_and_ribo_genes/bmalayi_rRNA_and_ribo_genes.rds")
+
+write.csv(bmalayi_rRNA_ribo_genes, file = "rRNA_and_ribo_genes/bmalayi_rRNA_and_ribo_genes.csv")
+
+write.xlsx(bmalayi_rRNA_ribo_genes, file = "rRNA_and_ribo_genes/bmalayi_rRNA_and_ribo_genes.xlsx", col.names=TRUE, row.names=TRUE)
+
+```
+
+## Get Brugia malayi Mitochondiral genes
+
+```{r see mitochondrial protein coding genes}
+
+#see product column values that contain mitochondrial or Mitochondrial in the bmalayi annotation table
+
+mito_string_variations <- c(".*mitoc.*", ".*Mitoc.*")
+
+mito_name_lists <- lapply(1:length(mito_string_variations ), function(i) {grep(pattern =mito_string_variations[[i]], x = all_bmalayi_gene_annotations$product, value = TRUE)})
+
+```
+
+```{r get mitochondrial protein coding genes 1}
+
+#get bmalayi genes annotated as mitochondrial or Mitochondrial in the biotype column
+
+bmalayi_mito_list <- lapply(1:length(mito_string_variations), function(i) {str_detect(all_bmalayi_gene_annotations$product, regex(mito_string_variations[[i]], dotall = TRUE))})
+
+bmalayi_mito_list_no_na <- lapply(1:length(bmalayi_mito_list), function(i) {bmalayi_mito_list[[i]] %>% replace_na(FALSE)})
+
+```
+
+```{r get mitochondrial protein coding genes 2}
+
+#subset annotation table for mitochondrial/Mitochondrial genes
+
+mito_table_list <- lapply(1:length(bmalayi_mito_list_no_na), function(i) {all_bmalayi_gene_annotations[bmalayi_mito_list_no_na[[i]],]})
+
+mito_table_list
+
+```
+
+```{r get mitochondrial protein coding genes 3}
+
+#get mito gene lists and add bmalayi- in front so matches syntax of gene names in the count matrices
+
+mito_genes_list <- lapply(1:length(mito_table_list), function(i) {mito_table_list[[i]]$gene_id})
+mito_genes_list <- lapply(1:length(mito_genes_list), function(i) {paste("bmalayi-", mito_genes_list[[i]], sep="")})
+
+```
+
+```{r get mitochondrial protein coding genes 4}
+
+#combine mitochondrial and Mitochondrial gene lists
+
+all_mito_genes <- unlist(mito_genes_list, recursive = TRUE, use.names = TRUE)
+
+```
+
+# Save mitochondrial lists
+
+```{r save mito genes}
+
+#all_mito_genes
+
+dir.create(paste0("mitochondrial_genes"))
+
+saveRDS(all_mito_genes, file = "mitochondrial_genes/bmalayi_mito_genes.rds")
+
+write.csv(all_mito_genes, file = "mitochondrial_genes/bmalayi_mito_genes.csv")
+
+write.xlsx(all_mito_genes, file = "mitochondrial_genes/bmalayi_mito_genes.xlsx", col.names=TRUE, row.names=TRUE)
+
+```
+
+## Get Brugia malayi protein coding genes
+
+```{r get bmalayi protein coding genes}
+
+# Get Brugia malayi protein coding gene list
+bmalayi_coding <- (all_bmalayi_gene_annotations$biotype == "protein_coding")
+
+bmalayi_coding_list <- str_detect(all_bmalayi_gene_annotations$biotype, regex(".*protein_coding.*", dotall = TRUE))
+bmalayi_coding_list[is.na(bmalayi_coding_list)] <- FALSE
+
+bmalayi_coding_table <- all_bmalayi_gene_annotations[bmalayi_coding_list,]
+
+bmalayi_coding_genes <- bmalayi_coding_table$gene_id
+
+bmalayi_coding_genes <- paste("bmalayi-", bmalayi_coding_genes, sep="")
+length(bmalayi_coding_genes)
+
+```
+
+# Save Brugia malayi protein coding gene list
+
+```{r save bmalayi protein coding genes}
+
+dir.create(paste0("all_protein_coding_genes"))
+
+saveRDS(bmalayi_coding_genes, file = "all_protein_coding_genes/bmalayi_protein_coding_genes.rds")
+
+write.csv(bmalayi_coding_genes, file = "all_protein_coding_genes/bmalayi_protein_coding_genes.csv")
+
+write.xlsx(bmalayi_coding_genes, file = "all_protein_coding_genes/bmalayi_protein_coding_genes.xlsx", col.names=TRUE, row.names=TRUE)
+
+```
+
+## bmalayi protein coding (no ribo genes)
+
+```{r remove ribosomal genes from bmalayi protein coding genes}
+
+#remove ribosomal genes from bmalayi protein coding genes
+bmalayi_protein_coding.no.ribo <- bmalayi_coding_genes[!(bmalayi_coding_genes %in% all_ribo_genes)]
+length(bmalayi_protein_coding.no.ribo)
+
+
+#check removed ribosomal genes
+intersect(bmalayi_protein_coding.no.ribo,all_ribo_genes)
+
+``` 
+
+## Save bmalayi protein coding (no ribo)
+
+```{r save bmalayi protein coding (no ribo)}
+
+dir.create(paste0("bmalayi_protein_coding_no_ribo"))
+
+saveRDS(bmalayi_protein_coding.no.ribo, file = "bmalayi_protein_coding_no_ribo/bmalayi_protein_coding.no.ribo.rds")
+
+write.csv(bmalayi_protein_coding.no.ribo, file = "bmalayi_protein_coding_no_ribo/bmalayi_protein_coding.no.ribo.csv")
+
+write.xlsx(bmalayi_protein_coding.no.ribo, file = "bmalayi_protein_coding_no_ribo/bmalayi_protein_coding.no.ribo.xlsx", col.names=TRUE, row.names=TRUE)
+
+```
+
+## bmalayi protein coding (no mito genes)
+
+```{r remove mitochondrial genes from bmalayi protein coding genes}
+
+#remove mitochondrial genes from bmalayi protein coding genes
+bmalayi_protein_coding.no.mito <- bmalayi_coding_genes[!(bmalayi_coding_genes %in% all_mito_genes)]
+length(bmalayi_protein_coding.no.mito)
+
+#check removed mitochondrial genes
+intersect(bmalayi_protein_coding.no.mito,all_mito_genes)
+
+``` 
+
+# Save bmalayi protein coding + wBm gene list (no mito)
+
+```{r save bmalayi protein coding (no mito)}
+
+dir.create(paste0("bmalayi_protein_coding_no_mito"))
+
+saveRDS(bmalayi_protein_coding.no.mito, file = "bmalayi_protein_coding_no_mito/bmalayi_protein_coding.no.mito.rds")
+
+write.csv(bmalayi_protein_coding.no.mito, file = "bmalayi_protein_coding_no_mito/bmalayi_protein_coding.no.mito.csv")
+
+write.xlsx(bmalayi_protein_coding.no.mito, file = "bmalayi_protein_coding_no_mito/bmalayi_protein_coding.no.mito.xlsx", col.names=TRUE, row.names=TRUE)
+
+```
+
+## bmalayi protein coding (no ribo+mito genes)
+
+```{r remove ribosomal and mitochondrial genes from bmalayi protein coding genes}
+
+length(intersect(all_ribo_genes,all_mito_genes))
+all_ribo_mito_genes <- c(all_ribo_genes,all_mito_genes)
+all_ribo_mito_genes <- unique(all_ribo_mito_genes)
+length(all_ribo_mito_genes)
+
+length(bmalayi_coding_genes)
+length(intersect(bmalayi_coding_genes,all_mito_genes))
+length(intersect(bmalayi_coding_genes,all_ribo_genes))
+
+#remove ribosomal, mitochondrial genes from bmalayi protein coding genes
+bmalayi_protein_coding.no.ribo.no.mito <- bmalayi_coding_genes[!(bmalayi_coding_genes %in% all_ribo_mito_genes)]
+length(bmalayi_protein_coding.no.ribo.no.mito)
+
+
+#check removed ribosomal, mitochondrial genes
+intersect(bmalayi_protein_coding.no.ribo.no.mito,all_ribo_mito_genes)
+
+``` 
+
+# Save bmalayi protein coding (no ribo+mito genes)
+
+```{r save bmalayi protein coding (no ribo+mito)}
+
+dir.create(paste0("bmalayi_protein_coding_no_ribo_no_mito"))
+
+saveRDS(bmalayi_protein_coding.no.ribo.no.mito, file = "bmalayi_protein_coding_no_ribo_no_mito/bmalayi_protein_coding.no.ribo.no.mito.rds")
+
+write.csv(bmalayi_protein_coding.no.ribo.no.mito, file = "bmalayi_protein_coding_no_ribo_no_mito/bmalayi_protein_coding.no.ribo.no.mito.csv")
+
+write.xlsx(bmalayi_protein_coding.no.ribo.no.mito, file = "bmalayi_protein_coding_no_ribo_no_mito/bmalayi_protein_coding.no.ribo.no.mito.xlsx", col.names=TRUE, row.names=TRUE)
+
+```
+
+## Get Wolbachia (wBm) genes
+
+```{r get wBm genes}
+
+#For Wolbachia
+all_wBm_gene_annotations <- read.delim("wBm.gene_biotype_product.map.tsv", sep="\t", header=F, stringsAsFactors = F)
+all_wBm_gene_annotations
+
+wBm_coding_list <- str_detect(all_wBm_gene_annotations$V2, regex(".*protein_coding.*", dotall = TRUE))
+wBm_coding_list[is.na(wBm_coding_list)] <- FALSE
+#wBm_coding_list
+
+wBm_coding_table <- all_wBm_gene_annotations[wBm_coding_list,]
+wBm_coding_table
+
+wBm_coding_genes <- wBm_coding_table$V1
+#wBm_coding_genes
+
+wBm_coding_genes <- paste("wBm-----", wBm_coding_genes, sep="")
+wBm_coding_genes <- gsub("_", "-", wBm_coding_genes)
+#head(wBm_coding_genes)
+length(wBm_coding_genes)
+
+all_wBm_genes <- all_wBm_gene_annotations$V1
+all_wBm_genes <- paste("wBm-----", all_wBm_genes, sep="")
+all_wBm_genes <- gsub("_", "-", all_wBm_genes)
+length(all_wBm_genes)
+#head(all_wBm_genes)
+
+```
+
+# Save wBm gene lists
+
+```{r save wBm genes}
+
+dir.create(paste0("wBm_all_genes"))
+
+saveRDS(all_wBm_genes, file = "wBm_all_genes/all_wBm_genes.rds")
+
+write.csv(all_wBm_genes, file = "wBm_all_genes/all_wBm_genes.csv")
+
+write.xlsx(all_wBm_genes, file = "wBm_all_genes/all_wBm_genes.xlsx", col.names=TRUE, row.names=TRUE)
+
+```

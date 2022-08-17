@@ -1,0 +1,479 @@
+---
+title: "Load counts matrices and add metadata"
+author: "Hailey Sounart"
+date: "8/15/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
+```
+
+## Load packages
+```{r load packages}
+  library(STutility)
+  library(hdf5r)
+  library(imager)
+  library(akima)
+  library(plotly)
+  library(raster)
+  library(dplyr)
+  library(magrittr)
+  library(ggplot2)
+  library(imager) 
+  library(magrittr)
+  library(RColorBrewer)
+  library(stringr)
+  library(openxlsx)
+  library(hash)
+  library(readxl)
+  library(purrr)
+  library(harmony)
+```
+
+```{r set working directory}
+
+setwd("<path to the directory where count matrices for all samples reside>")
+``` 
+
+## Load processed data (spaceranger outputs)
+```{r Load filtered data}
+
+all_sections_subset_infotable_for_labels <- read.table("infotable.csv", sep=",", header=T, stringsAsFactors = F)
+all_sections_subset_infotable_for_labels
+
+``` 
+
+## Make Seurat object
+```{r make object}
+
+all_sections_subset_for_labels <- InputFromTable(infotable = all_sections_subset_infotable_for_labels,
+                                 min.gene.count = 0, 
+                                 min.gene.spots = 0,
+                                 min.spot.count = 0,
+                                 min.spot.feature.count = 0,
+                                 platform="Visium")
+``` 
+
+## Section number - Manual Annotations
+
+Manually label each worm section with the section number. See https://giacomellolabst.shinyapps.io/brugiast-shiny/ for the worm sections with the corresponding section number. 
+
+```{r label each worm sample and section, fig.width = 10, fig.height = 10, out.height = "100%", out.width = "100%"}
+
+all_sections_subset_for_labels <- ManualAnnotation(all_sections_subset_for_labels)
+
+``` 
+
+Transfer label to new metadata column called "section".
+
+```{r transfer label for each worm section, fig.width = 10, fig.height = 10, out.height = "100%", out.width = "100%"}
+
+all_sections_subset_for_labels$section <- paste(all_sections_subset_for_labels$labels)
+all_sections_subset_for_labels@meta.data
+
+``` 
+
+## Remove any unlabeled soots
+```{r remove unlabeled spots, fig.width = 10, fig.height = 10, out.height = "100%", out.width = "100%"}
+
+all_sections_subset_labeled.on_labeled_spot <- SubsetSTData(all_sections_subset_for_labels, expression = (section != "Default"))
+all_sections_subset_labeled.on_labeled_spot@meta.data
+``` 
+
+## Save Labeled Object
+
+``` {r save labeled object}
+
+saveRDS(all_sections_subset_labeled.on_labeled_spot, file = "bmalayi.manually.section.labeled.rds")
+
+```
+
+See "V10F24_041_spots_seurat_metadata.xlsx" in the github directory "https://github.com/giacomellolab/Brugia_malayi_study/tree/main/data" for how the spot section metadata ends up
+
+## Read in Labeled Object
+
+``` {r save labeled object}
+
+all_sections_subset.section.labeled <- readRDS("bmalayi.manually.section.labeled.rds")
+
+```
+
+Look at object
+``` {r save labeled object}
+
+all_sections_subset.section.labeled
+
+```
+
+## Add additional metadata
+
+Add: sample, sub-array, slide, worm batch, ROI, embedding technique, treatment condition, combined label slide_subarray, combined label sample_section, combined label slide_subarray_sample_section
+
+## Sampleid 
+
+Create sampleid number metadata column
+```{r sampleid metdata}
+
+#also create sample_id metadata
+all_sections_subset.section.labeled$sample_id <- paste0("", 1:9)[as.numeric(do.call(rbind, strsplit(colnames(all_sections_subset.section.labeled), split = "_"))[, 2])]
+
+all_sections_subset.section.labeled@meta.data
+
+```
+
+## Sub-array
+
+Create sub-array metdadata column
+``` {r sub-array labels}
+
+all_sections_subset.section.labeled$sub_array <- plyr::mapvalues(
+    x = all_sections_subset.section.labeled$sample_id, 
+    from = c("1","2","3"),
+    to = c("A1","B1","D1")
+)
+
+all_sections_subset.section.labeled@meta.data
+
+```
+
+## Slide
+
+Create slide metdadata column
+``` {r slide labels}
+
+all_sections_subset.section.labeled$slide <- plyr::mapvalues(
+    x = all_sections_subset.section.labeled$sample_id, 
+    from = c("1","2","3"),
+    to = c("V10F24_041","V10F24_041","V10F24_041")
+)
+
+all_sections_subset.section.labeled@meta.data
+
+```
+
+## Worm batch
+
+Create worm batch metadata column
+``` {r worm batch labels}
+
+all_sections_subset.section.labeled$sample_batch <- plyr::mapvalues(
+    x = all_sections_subset.section.labeled$sample_id, 
+    from = c("1","2","3"),
+    to = c("3","3","3")
+)
+
+all_sections_subset.section.labeled@meta.data
+
+```
+
+## ROI
+
+Create worm ROI metadata column
+``` {r ROI labels}
+
+all_sections_subset.section.labeled$ROI <- plyr::mapvalues(
+    x = all_sections_subset.section.labeled$sample_id, 
+    from = c("1","2","3"),
+    to = c("1","1","1")
+)
+
+all_sections_subset.section.labeled@meta.data
+
+```
+
+## Embedding technique
+
+Create embedding technique metadata column
+``` {r emebedding technique labels}
+
+all_sections_subset.section.labeled$embed <- plyr::mapvalues(
+    x = all_sections_subset.section.labeled$sample_id, 
+    from = c("1","2","3"),
+    to = c("re_embed","re_embed","original")
+)
+
+all_sections_subset.section.labeled@meta.data
+
+```
+## Worm sample
+
+Create worm sample metadata column
+``` {r worm sample labels}
+
+all_sections_subset.section.labeled$worm_sample <- plyr::mapvalues(
+    x = all_sections_subset.section.labeled$sample_id, 
+    from = c("1","2","3"),
+    to = c("BM1","BM2","BM3")
+)
+
+all_sections_subset.section.labeled@meta.data
+
+```
+
+## Combined slide_subarray
+
+```{r echo=FALSE}
+
+all_sections_subset.section.labeled$slide_subarray <- paste(all_sections_subset.section.labeled$slide, all_sections_subset.section.labeled$sub_array, sep="_")
+
+```
+
+## Combined sample_section 
+
+```{r echo=FALSE}
+
+all_sections_subset.section.labeled$sample_section <- paste(all_sections_subset.section.labeled$worm_sample, all_sections_subset.section.labeled$section, sep="_")
+
+```
+
+## Combined slide_subarray_sample_section
+
+```{r echo=FALSE}
+
+all_sections_subset.section.labeled$slide_subarray_sample_section <- paste(all_sections_subset.section.labeled$slide, all_sections_subset.section.labeled$sub_array, all_sections_subset.section.labeled$worm_sample, all_sections_subset.section.labeled$section, sep="_")
+
+```
+
+``` {r check metadata}
+
+all_sections_subset.section.labeled@meta.data
+
+```
+
+## Save Object
+
+``` {r save labeled object}
+
+saveRDS(all_sections_subset.section.labeled, file = "bmalayi.all.labeles.rds")
+
+```
+
+## Save metadata
+
+``` {r save labeled object with metadata}
+
+write.csv(all_sections_subset.section.labeled@meta.data[,], file = "V10F24_041_metadata.csv")
+
+write.xlsx(all_sections_subset.section.labeled@meta.data[,], file = "V10F24_041_metadata.xlsx", col.names=TRUE, row.names=TRUE)
+
+```
+
+## Read in Object
+
+``` {r read in labeled object}
+
+all_sections_subset_QC <- readRDS("bmalayi.all.labeles.rds")
+
+```
+
+## Ribosomal content
+
+```{r load in ribosomal genes, all spots 1, fig.width = 10, fig.height = 5, out.height = "100%", out.width = "100%"}
+
+#load in the list(s) of ribosomal genes
+
+#load in rRNA genes
+bmalayi_rRNA_gene_list <- readRDS("rRNA_genes/bmalayi_rRNA_genes.rds") #refhook = NULL
+
+#load in ribosomal protein coding genes
+bmalayi_ribo_gene_list <- readRDS("ribosomal_genes/bmalayi_ribo_genes.rds") #refhook = NULL
+
+#combine rRNA and ribosomal protein coding genes into a single list
+bmalayi_all_ribo_list_210622 <- c(bmalayi_rRNA_gene_list, bmalayi_ribo_gene_list)
+
+```
+
+```{r get count and percent ribosomal gene expression, all spots 1, fig.width = 10, fig.height = 5, out.height = "100%", out.width = "100%"}
+
+#get the list of genes in the object that intersect/match the genes in the combined ribo list
+ribo_in_raw_obj_210622 <- Reduce(intersect, list(rownames(all_sections_subset_QC@assays$RNA),bmalayi_all_ribo_list_210622))
+#ribo_in_raw_obj_210518
+length(ribo_in_raw_obj_210622)
+
+#create a column "percent.ribo" in the metadata that contains the percentage of ribosomal gene UMI counts in each spot
+all_sections_subset_QC$percent.ribo <- (Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[ribo_in_raw_obj_210622, ])/Matrix::colSums(all_sections_subset_QC@assays$RNA@counts))*100
+
+#create a column "count.ribo" in the metadata that contains the UMI counts of ribosomal genes in each spot
+all_sections_subset_QC$counts.ribo <- Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[ribo_in_raw_obj_210622, ])
+
+```
+
+# rRNA content 
+
+```{r get count and percent rRNA gene expression, all spots 1, fig.width = 10, fig.height = 5, out.height = "100%", out.width = "100%"}
+
+#get the list of genes in the object that intersect/match the genes in the rRNA list
+rRNA_in_raw_obj_210622 <- Reduce(intersect, list(rownames(all_sections_subset_QC@assays$RNA),bmalayi_rRNA_gene_list))
+#ribo_in_raw_obj_210518
+length(rRNA_in_raw_obj_210622)
+
+#create a column "percent.rRNA" in the metadata that contains the percentage of rRNA gene UMI counts in each spot
+all_sections_subset_QC$percent.rRNA <- (Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[rRNA_in_raw_obj_210622, ])/Matrix::colSums(all_sections_subset_QC@assays$RNA@counts))*100
+
+#create a column "count.rRNA" in the metadata that contains the UMI counts of rRNA genes in each spot
+all_sections_subset_QC$counts.rRNA <- Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[rRNA_in_raw_obj_210622, ])
+
+```
+
+## Mitochondrial content
+
+```{r load in mitochondrial genes, all spots 1, fig.width = 10, fig.height = 5, out.height = "100%", out.width = "100%"}
+
+#load in mitochondrial gene list
+bmalayi_mito_gene_list <- readRDS("mitochondrial_genes/bmalayi_mito_genes.rds") #refhook = NULL
+
+```
+
+```{r get count and percent mitochondrial gene expression, all spots 1, fig.width = 10, fig.height = 5, out.height = "100%", out.width = "100%"}
+
+#get the list of genes in the object that intersect/match the genes in the mito list
+mito_in_raw_obj_210622 <- Reduce(intersect, list(rownames(all_sections_subset_QC@assays$RNA),bmalayi_mito_gene_list))
+#ribo_in_raw_obj_210518
+length(mito_in_raw_obj_210622 )
+
+#create a column "percent.mito" in the metadata that contains the percentage of mitochondrial gene UMI counts in each spot
+all_sections_subset_QC$percent.mito <- (Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[mito_in_raw_obj_210622, ])/Matrix::colSums(all_sections_subset_QC@assays$RNA@counts))*100
+
+#create a column "count.mito" in the metadata that contains the UMI counts of mitochondrial genes in each spot
+all_sections_subset_QC$counts.mito <- Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[mito_in_raw_obj_210622, ])
+
+```
+
+## Protein coding content
+
+``` {r get bmalayi protein coding gene list}
+
+#load in wBm genes
+bmalayi_protein_coding_gene_list <- readRDS("all_protein_coding_genes/bmalayi_protein_coding_genes.rds") #refhook = NULL
+length(bmalayi_protein_coding_gene_list)
+
+```
+
+``` {r add protein coding info to metadata}
+
+#get the list of genes in the object that intersect/match the genes in the bmalayi_protein_coding_gene_list  list
+bmalayi_protein_coding_in_obj_210622 <- Reduce(intersect, list(rownames(all_sections_subset_QC@assays$RNA),bmalayi_protein_coding_gene_list))
+#wBm_in_obj_210518
+length(bmalayi_protein_coding_in_obj_210622)
+
+#create a column "percent.wBm" in the metadata that contains the percentage of bmalayi_protein_coding gene UMI counts in each spot
+all_sections_subset_QC$percent.protein_coding <- (Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[bmalayi_protein_coding_in_obj_210622, ])/Matrix::colSums(all_sections_subset_QC@assays$RNA@counts))*100
+
+#create a column "count.wBm" in the metadata that contains the UMI counts of bmalayi_protein_coding genes in each spot
+all_sections_subset_QC$counts.protein_coding <- Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[bmalayi_protein_coding_in_obj_210622, ])
+
+all_sections_subset_QC@meta.data
+```
+
+Protein coding - no ribo, no mito, no ribo+no mito
+``` {r add protein coding info to metadata 2}
+
+#load protein coding no ribo
+bmalayi_protein_coding_no_ribo_gene_list <- readRDS("bmalayi_protein_coding_no_ribo/bmalayi_protein_coding.no.ribo.rds")
+length(bmalayi_protein_coding_no_ribo_gene_list)
+
+#load protein coding no mito
+bmalayi_protein_coding_no_mito_gene_list <- readRDS("bmalayi_protein_coding_no_mito/bmalayi_protein_coding.no.mito.rds")
+length(bmalayi_protein_coding_no_mito_gene_list)
+
+#load protein coding no ribo+no mito
+bmalayi_protein_coding_no_ribo_no_mito_gene_list <- readRDS("bmalayi_protein_coding_no_ribo_no_mito/bmalayi_protein_coding.no.ribo.no.mito.rds")
+length(bmalayi_protein_coding_no_ribo_no_mito_gene_list)
+
+
+```
+
+``` {r add protein coding no ribo info to metadata 3}
+
+#get the list of genes in the object that intersect/match the genes in the protein coding no ribo list
+bmalayi_protein_coding_no_ribo_in_obj_210622 <- Reduce(intersect, list(rownames(all_sections_subset_QC@assays$RNA),bmalayi_protein_coding_no_ribo_gene_list))
+#wBm_in_obj_210518
+length(bmalayi_protein_coding_no_ribo_in_obj_210622)
+
+#create a column "percent.wBm" in the metadata that contains the percentage of protein coding no ribo gene UMI counts in each spot
+all_sections_subset_QC$percent.protein_coding_no_ribo <- (Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[bmalayi_protein_coding_no_ribo_in_obj_210622, ])/Matrix::colSums(all_sections_subset_QC@assays$RNA@counts))*100
+
+#create a column "count.wBm" in the metadata that contains the UMI counts of protein coding no ribo genes in each spot
+all_sections_subset_QC$counts.protein_coding_no_ribo <- Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[bmalayi_protein_coding_no_ribo_in_obj_210622, ])
+
+all_sections_subset_QC@meta.data
+```
+
+``` {r add protein coding no mtio info to metadata 4}
+
+#get the list of genes in the object that intersect/match the genes in the protein coding no mtio list
+bmalayi_protein_coding_no_mito_in_obj_210622 <- Reduce(intersect, list(rownames(all_sections_subset_QC@assays$RNA),bmalayi_protein_coding_no_mito_gene_list))
+#wBm_in_obj_210518
+length(bmalayi_protein_coding_no_mito_in_obj_210622)
+
+#create a column "percent.wBm" in the metadata that contains the percentage of protein coding no mtio gene UMI counts in each spot
+all_sections_subset_QC$percent.protein_coding_no_mito <- (Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[bmalayi_protein_coding_no_mito_in_obj_210622, ])/Matrix::colSums(all_sections_subset_QC@assays$RNA@counts))*100
+
+#create a column "count.wBm" in the metadata that contains the UMI counts of protein coding no mtio genes in each spot
+all_sections_subset_QC$counts.protein_coding_no_mito <- Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[bmalayi_protein_coding_no_mito_in_obj_210622, ])
+
+all_sections_subset_QC@meta.data
+```
+
+``` {r add protein coding no ribo+no mito info to metadata 5}
+
+#get the list of genes in the object that intersect/match the genes in the protein coding no ribo+no mitolist
+bmalayi_protein_coding_no_ribo_no_mito_in_obj_210622 <- Reduce(intersect, list(rownames(all_sections_subset_QC@assays$RNA),bmalayi_protein_coding_no_ribo_no_mito_gene_list))
+#wBm_in_obj_210518
+length(bmalayi_protein_coding_no_ribo_no_mito_in_obj_210622)
+
+#create a column "percent.wBm" in the metadata that contains the percentage of protein coding no ribo+no mito gene UMI counts in each spot
+all_sections_subset_QC$percent.protein_coding_no_ribo_no_mito <- (Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[bmalayi_protein_coding_no_ribo_no_mito_in_obj_210622, ])/Matrix::colSums(all_sections_subset_QC@assays$RNA@counts))*100
+
+#create a column "count.wBm" in the metadata that contains the UMI counts of protein coding no ribo+no mito genes in each spot
+all_sections_subset_QC$counts.protein_coding_no_ribo_no_mito <- Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[bmalayi_protein_coding_no_ribo_no_mito_in_obj_210622, ])
+
+all_sections_subset_QC@meta.data
+```
+
+## Wolbachia (wBm) content
+
+``` {r get wBm gene list}
+
+#load in wBm genes
+wBM_all_gene_list <- readRDS("wBm_all_genes/all_wBm_genes.rds")
+length(wBM_all_gene_list)
+
+all_sections_subset_QC_wBm <- intersect(rownames(all_sections_subset_QC), wBM_all_gene_list)
+all_sections_subset_QC_wBm
+```
+
+``` {r add wBm info to metadata}
+
+#get the list of genes in the object that intersect/match the genes in the wBm list
+wBm_in_obj_210622 <- Reduce(intersect, list(rownames(all_sections_subset_QC@assays$RNA),wBM_all_gene_list))
+#wBm_in_obj_210518
+length(wBm_in_obj_210622)
+
+#create a column "percent.wBm" in the metadata that contains the percentage of wBm gene UMI counts in each spot
+all_sections_subset_QC$percent.wBm <- (Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[wBm_in_obj_210622, ])/Matrix::colSums(all_sections_subset_QC@assays$RNA@counts))*100
+
+#create a column "count.wBm" in the metadata that contains the UMI counts of wBm genes in each spot
+all_sections_subset_QC$counts.wBm <- Matrix::colSums(all_sections_subset_QC@assays$RNA@counts[wBm_in_obj_210622, ])
+
+all_sections_subset_QC@meta.data
+```
+
+## Save pre-filtered object
+
+``` {r save labeled+metadata object}
+
+saveRDS(all_sections_subset_QC, file = "bmalayi.pre.filtered.rds")
+
+```
+
+## Save metadata
+
+``` {r save meta.data}
+
+write.csv(all_sections_subset_QC@meta.data[,], file = "V10F24_041_extended_metadata.csv")
+
+write.xlsx(all_sections_subset_QC@meta.data[,], file = "V10F24_041_extended_metadata.xlsx", col.names=TRUE, row.names=TRUE)
+
+```
