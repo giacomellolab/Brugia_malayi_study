@@ -1,0 +1,82 @@
+---
+title: "3D model"
+author: "Yuvarani Masarapu"
+date: "4/18/2022"
+output: 
+  html_document:
+  code_folding: hide
+---
+
+```{r echo=FALSE, verbose = FALSE, warning=FALSE, message=FALSE, fig.width = 8, fig.height = 6}
+library(STutility)
+library(Seurat)
+library(SeuratObject)
+library(magrittr)
+library(imager)
+library(raster)
+library(akima)
+library(plotly)
+library(ggplot2)
+library(dplyr)
+library(shinyjs)
+library(shiny)
+```
+
+```{r eval=FALSE}
+dir <- getwd()
+
+#Read in normalized object
+worm_object <- readRDS(file = paste(dir, "/final_code_objs/bmalay_filt_obj.list.nfeat.merged.rds", sep = ""))
+worm_object_subsetB1 <- SubsetSTData(object = worm_object, spots = colnames(worm_object)[worm_object$slide_subarray == "V10F24_041_B1"])
+
+sections = c("V10F24_041_B1_BM2_11", "V10F24_041_B1_BM2_10", "V10F24_041_B1_BM2_9", "V10F24_041_B1_BM2_8", "V10F24_041_B1_BM2_7", "V10F24_041_B1_BM2_6", "V10F24_041_B1_BM2_5","V10F24_041_B1_BM2_4","V10F24_041_B1_BM2_3", "V10F24_041_B1_BM2_2")
+
+#split into each section and save all individual objects in a list
+worm_sections <- list()
+for (i in 1:length(sections))
+{
+  worm_sections[i] <- SubsetSTData(worm_object_subsetB1, spots = colnames(worm_object_subsetB1)[worm_object_subsetB1$slide_subarray_sample_section == sections[i]])
+}
+
+#load individual processed images
+imgs <- list.files(path = paste(dir, "/photoshopped_images", sep = ""), pattern = "*.png", full.names = T)
+for (i in 1:length(imgs)){
+  worm_sections[[i]]@tools$Staffli@imgs <- imgs[i]
+  worm_sections[[i]] <- UpdateSeuratObject(worm_sections[[i]])
+  worm_sections[[i]] <- LoadImages(object = worm_sections[[i]], time.resolve = F, verbose = F)
+}
+
+#merge the objects together and then reload images.
+worm.merge.final <- MergeSTData(worm_sections[[1]], worm_sections[2:length(worm_sections)], merge.data = T)
+
+#Assign the same raw images to masked slot of the object 
+# (since the 'raw' images are already photoshopped for masking)
+st.object <- GetStaffli(worm.merge.final)
+st.object@rasterlists$masked <- st.object@rasterlists$raw
+st.object@rasterlists$masked.masks <- lapply(st.object@rasterlists$raw, function(x) {
+  y <- as.raster(ifelse(x == "#ffffffff", 0, 1))
+})
+worm.merge.final@tools$Staffli <- st.object
+
+#This step will 
+worm.merge.final = LoadImages(worm.merge.final, time.resolve = F, verbose = F)
+
+#This step is the sanity check that the masking step works and the spots are perfectly aligned on the tissue sections
+FeatureOverlay(worm.merge.final, features = "nFeature_RNA", palette = "GrRd", pt.size = 0.5, sampleids = 1:10, ncols = 4, type = "masked", show.sb = F)
+
+#Another Sanity check before manual alignment
+ImagePlot(worm.merge.final, method = "raster", ncols = 4, type = "masked")
+
+#Manual alignment done at this step.
+#Screenshots taken during the alignment provided in the same folder (./manual_alignment_screenshots) as this code.
+worm.merge.final = ManualAlignImages(worm.merge.final, type = "masked")
+
+#It is important to switch resolution here so that the sections are stacked properly on the 3D model
+worm.merge.final = SwitchResolution(worm.merge.final, xdim = 2000)
+
+#Create 3D model with this command
+worm.merge.final = Create3DStack(worm.merge.final)
+```
+
+
+
