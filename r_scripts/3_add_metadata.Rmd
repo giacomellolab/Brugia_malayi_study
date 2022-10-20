@@ -64,6 +64,7 @@ Manually label each worm section with the section number. See https://giacomello
 all_sections_subset_for_labels <- ManualAnnotation(all_sections_subset_for_labels)
 
 ``` 
+Time on manual annotations depends on how long it takes for one to label each section.
 
 Transfer label to new metadata column called "section".
 
