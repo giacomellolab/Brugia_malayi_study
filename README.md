@@ -1,4 +1,4 @@
-# Miniature spatial transcriptomics "miniatureST" on the parasitic worm Brugia malayi provides insight into the mutualistic relationship with its Wolbachia endosymbiont 
+# Miniature spatial transcriptomics for studying parasite-endosymbiont relationships at the micro scale 
 
 Corresponding sequences fastq files can be accessed upon request from here and will be made pubicly available upon publication. The bash scripts used to build a custom spaceranger reference, trim adaptor sequneces from the fastq files, and run the trimmed fastq files through spaceranger count to generate the count matrices were run in the sequential order ("<#>_filename.sh ") and can be found in the folder [sequence_read_processing](https://github.com/giacomellolab/Brugia_malayi_study/tree/main/sequence_read_processing).
 
