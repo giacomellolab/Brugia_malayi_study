@@ -1,5 +1,11 @@
 # Miniature spatial transcriptomics for studying parasite-endosymbiont relationships at the micro scale 
 
+## Installation
+[sequence_read_processing](https://github.com/giacomellolab/Brugia_malayi_study/tree/main/sequence_read_processing) requires cutadapt (v2.3), installation instructions can be found [here](https://cutadapt.readthedocs.io/en/stable/installation.html) and a custom bash script [TSO_polyA_trimming.sh](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/sequence_read_processing/1.TSO_and_polyA_trimmer_sbatch.sh) with installation instructions found [here](https://github.com/ludvigla/VisiumTrim). Converting the Brugia malayi annotation file from GFF to GTF required gffread from cufflinks (v2.2.1) with installation instructions found [here](https://github.com/cole-trapnell-lab/cufflinks). Building a combined Brugia malayi-Wolbachia reference and generating the count matrcies required 10X Genomics Space Ranger (v1.2.0) with installation instructions found [here](https://support.10xgenomics.com/spatial-gene-expression/software/pipelines/latest/tutorials/setup-spaceranger#install). 
+
+Count matrices were analyzed in R (v4.0.3) using STUtility (v1.0) with installation instructions found [here](https://github.com/jbergenstrahle/STUtility) and used Harmony (v0.1.0) with installation instructions found [here](https://github.com/immunogenomics/harmony).
+
+## Data
 Corresponding sequences fastq files can be accessed upon request from here and will be made pubicly available upon publication. The bash scripts used to build a custom spaceranger reference, trim adaptor sequneces from the fastq files, and run the trimmed fastq files through spaceranger count to generate the count matrices were run in the sequential order ("<#>_filename.sh ") and can be found in the folder [sequence_read_processing](https://github.com/giacomellolab/Brugia_malayi_study/tree/main/sequence_read_processing).
 
 The count matrices and high-resolution H&E tissue images will be publicly available in Mendeley dataset under Reserved DOI: [10.17632/8f62vydg3z.1](https://data.mendeley.com/v1/datasets/8f62vydg3z/draft) upon publication. They can currently be accessed upon request.
