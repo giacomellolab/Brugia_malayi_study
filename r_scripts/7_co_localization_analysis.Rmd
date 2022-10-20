@@ -119,6 +119,7 @@ brugia_wBm_de_genes_wilcox_deseq2_p0.05_fc0.1_comb
 
 
 ``` 
+
 Rename rows/genes
 ``` {r combine de genes 3}
 
@@ -169,3 +170,5 @@ saveRDS(brugia_wBm_de_genes_wilcox_deseq2_p0.05_fc0.1_comb_renamed_annot, file =
 write.xlsx(brugia_wBm_de_genes_wilcox_deseq2_p0.05_fc0.1_comb_renamed_annot, file = "brugia_colocal_wilcox_deseq2_p0.05_fc0.1_de_genes.xlsx", col.names=TRUE, row.names=TRUE)
 
 ``` 
+
+Output is the deferentially expressed brugia genes in Wolbachia+ verus Wolbachia- spots in an excel file and as an rds object, and is shown in Supplementary Table 5. The output is used to generate the plots for Figure 4A-D. 

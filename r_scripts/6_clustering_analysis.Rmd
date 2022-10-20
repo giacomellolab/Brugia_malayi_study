@@ -93,6 +93,7 @@ fill=c("#41ab5d","#fc9272","#4292c6","#df65b0")
 DimPlot(bmalayi_sctransform_per_sample_norm_obj.PCA.harmony, label = FALSE, cols = fill, pt.size = 3)
 
 ```
+
 ## Save PCA, harmony object
 
 ``` {r save clustered object}
@@ -110,7 +111,7 @@ markers_per_clu
 
 ```
 
-## p val filt
+## p value filt
 
 ``` {r filt cluster markers}
 
@@ -166,3 +167,5 @@ markers_per_clu_filt_list_rename_merged
 
 write.xlsx(markers_per_clu_filt_list_rename_merged , file = "clus_de_genes_p0.05.xlsx", col.names=TRUE, row.names=TRUE)
 ```
+
+The outputs are the dimensionally reduced, integrated with harmony rds object with clusters and the deferentially expressed marker genes per cluster in an excel file. The dimensionally reduced, integrated with harmony rds object of brugia count matrix and metadata is used to make the plots shown in Figure 2A-B, Figure 2F, for the functional term enrichment analysis performed to generate Figure 2E and Supplementary Table 3, Figure 3A-D, and Supplementary Figure 1. The output of he deferentially expressed marker genes per cluster in an excel file is Supplementary 2 and were used to make plot Figure 2C.

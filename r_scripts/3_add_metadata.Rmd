@@ -477,3 +477,5 @@ write.csv(all_sections_subset_QC@meta.data[,], file = "V10F24_041_extended_metad
 write.xlsx(all_sections_subset_QC@meta.data[,], file = "V10F24_041_extended_metadata.xlsx", col.names=TRUE, row.names=TRUE)
 
 ```
+
+Output is the metadata, contained in the rds object, used in the remaining analysis script and the brugia count matrix and metadata rds object used in the next script, 4_quality_check_filtering.Rmd.

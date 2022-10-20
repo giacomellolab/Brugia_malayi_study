@@ -445,3 +445,6 @@ all_section_QC_wBm_obj.brugia.filt.spots.gene.filt
 saveRDS(all_section_QC_wBm_obj.brugia.filt.spots.gene.filt, file = "wBm.filt.rds")
 
 ```
+
+
+Outputs are the violin plots and correlation plots shown in Figure 1 of the main manuscript, the filtered brugia count matrix and metadata rds object used in the next script, 5_normalization.Rmd, and the Wolbachia (wBm) filtered count matrix and metadata rds object.

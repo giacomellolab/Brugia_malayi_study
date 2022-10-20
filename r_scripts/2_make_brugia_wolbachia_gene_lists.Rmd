@@ -324,7 +324,7 @@ intersect(bmalayi_protein_coding.no.mito,all_mito_genes)
 
 ``` 
 
-# Save bmalayi protein coding + wBm gene list (no mito)
+# Save bmalayi protein coding (no mito)
 
 ```{r save bmalayi protein coding (no mito)}
 
@@ -419,3 +419,5 @@ write.csv(all_wBm_genes, file = "wBm_all_genes/all_wBm_genes.csv")
 write.xlsx(all_wBm_genes, file = "wBm_all_genes/all_wBm_genes.xlsx", col.names=TRUE, row.names=TRUE)
 
 ```
+
+Outputs are all the genes lists saved in 3 formats: rds object, excel file, and csv file. The output gene lists are of all brugia genes, brugia rRNA and ribosomal genes, brugia mitochondrial genes, brugia protein coding genes, brugia protein coding genes without ribosomal genes, brugia protein coding genes without mitochondrial genes, brugia protein coding genes without mitochondrial and ribosomal genes, and Wolbachia (wBm) genes. 
