@@ -25,3 +25,5 @@ spaceranger mkref \
 --genes=GCF_000008385.1_ASM838v1_genomic_exon_col3.gtf \
 --nthreads=8 \
 --memgb=50 \
+
+#outputs directory containing the combined Brugia malayi - Wolbachia reference
