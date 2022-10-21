@@ -4,17 +4,18 @@
 
 All [sequence_read_processing](https://github.com/giacomellolab/Brugia_malayi_study/tree/main/sequence_read_processing) scripts were run on Uppsala Multidisciplinary Center for Advanced Computational Science (UPPMAX), where detailed system information can be found [here](https://www.uppmax.uu.se/resources/systems/the-rackham-cluster/#:~:text=Each%20compute%20node%20consists%20of,ECC%202400MHz%20DIMM%20DRAM%20memory.). 
 
-[1.TSO_and_polyA_trimmer_sbatch.sh](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/sequence_read_processing/1.TSO_and_polyA_trimmer_sbatch.sh) was run on 4 cores in single-end mode and finished in about 9.2 minutes. [2.spaceranger_mkref_commands.sh](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/sequence_read_processing/2.spaceranger_mkref_commands.sh) was run on 8 nodes with 8 threads and maximum of 50 GB of memory and finished in about 2 minutes. [3.spaceranger_count_commandlines.sh](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/sequence_read_processing/3.spaceranger_count_commandlines.sh), each sample was run on 6 cores with a maximum of 33 GB of memory and finished in about 10-12 minutes.
+[1.TSO_and_polyA_trimmer_sbatch.sh](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/sequence_read_processing/1.TSO_and_polyA_trimmer_sbatch.sh) was run on 4 cores in single-end mode and finished in about 9.2 minutes. [2.spaceranger_mkref_commands.sh](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/sequence_read_processing/2.spaceranger_mkref_commands.sh) was run on 8 nodes with 8 threads and maximum of 50 GB of memory and finished in about 2 minutes. [3.spaceranger_count_commandlines.sh](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/sequence_read_processing/3.spaceranger_count_commandlines.sh), each sample was run on 6 cores with a maximum of 33 GB of memory and finished in about 10-12 minutes. All outputs are specified within the bash scripts.
 
-The [r_scripts](https://github.com/giacomellolab/Brugia_malayi_study/tree/main/r_scripts) were run on MacOS Catalina (v10.15.7) with 16 GB memory. 
+The [r_scripts](https://github.com/giacomellolab/Brugia_malayi_study/tree/main/r_scripts) were run on macOS Catalina (v10.15.7) with 16 GB RAM. 
 
 [1_package_info.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/1_package_info.Rmd) and [2_make_brugia_wolbachia_gene_lists.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/2_make_brugia_wolbachia_gene_lists.Rmd) take about 20 seconds to run.
 [3_add_metadata.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/3_add_metadata.Rmd) and [6_clustering_analysis.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/6_clustering_analysis.Rmd) take about 25 seconds to run.
 [4_quality_check_filtering.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/4_quality_check_filtering.Rmd) takes about 4 minutes to run.
 [5_normalization.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/5_normalization.Rmd) takes about 35 seconds to run.
-[7_co_localization_analysis.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/7_co_localization_analysis.Rmd) takes about 45 seconds to run.
+[7_co_localization_analysis.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/7_co_localization_analysis.Rmd) takes about 45 seconds to run. 
+All outputs are specified within the Rmarkdown files.
 
-The 3D model analysis [7_3D_model_code.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/7_3D_model_code.Rmd) was run on . The analysis takes about to run.
+The 3D model analysis [3D_model](https://github.com/giacomellolab/Brugia_malayi_study/tree/main/3D_model) was run on macOS Big Sur/Monterey (v10.16) with 32 GB RAM. The run times and outputs are specified within the Rmarkdown files.
 
 ## Installation
 
@@ -22,7 +23,7 @@ The 3D model analysis [7_3D_model_code.Rmd](https://github.com/giacomellolab/Bru
 
 Count matrices analysis in [r_scripts](https://github.com/giacomellolab/Brugia_malayi_study/tree/main/r_scripts) used R (v4.0.3) and STUtility (v1.0), with installation instructions found [here](https://github.com/jbergenstrahle/STUtility), and used Harmony (v0.1.0), with installation instructions found [here](https://github.com/immunogenomics/harmony). All package dependencies and their versions are shown in [1_package_info.html](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/1_package_info.html). Packages install in about 8 minutes.
 
-The 3D model analysis [7_3D_model_code.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/7_3D_model_code.Rmd) used R (v4.2.0) and STUtility (v1.0). All package dependencies and their versions are shown in . Packages install in about .
+The 3D model analysis [3D_model](https://github.com/giacomellolab/Brugia_malayi_study/tree/main/3D_model) used R (v4.2.0) and STUtility (v1.0). All package dependencies and their versions are shown in 1_package_load_versions.html contained within the zip file. Packages install in about 8 minutes.
 
 ## Data
 
