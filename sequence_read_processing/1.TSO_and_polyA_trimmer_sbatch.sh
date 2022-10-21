@@ -10,3 +10,5 @@ module load cutadapt/2.3
 for R2_fastq_file in /V10F24_041/fastq/*_R2_*.fastq.gz
 do bash TSO_polyA_trimming.sh "$R2_fastq_file"
 done
+
+#outputs trimmed fastq files
