@@ -39,3 +39,5 @@ spaceranger count --id=V10F24-041_201204_D1 \
                    --loupe-alignment=V10F24-041-D1.json \
                    --localcores=6 \
                    --localmem=33
+
+#outputs a directory for each sample containing all spaceranger count outputs, including the count matrices.
