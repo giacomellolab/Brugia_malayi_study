@@ -93,7 +93,6 @@ fill=c("#41ab5d","#fc9272","#4292c6","#df65b0")
 DimPlot(bmalayi_sctransform_per_sample_norm_obj.PCA.harmony, label = FALSE, cols = fill, pt.size = 3)
 
 ```
-
 ## Save PCA, harmony object
 
 ``` {r save clustered object}
@@ -111,7 +110,7 @@ markers_per_clu
 
 ```
 
-## p value filt
+## p val filt
 
 ``` {r filt cluster markers}
 

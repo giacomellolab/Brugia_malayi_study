@@ -55,6 +55,18 @@ all_sections_subset_for_labels <- InputFromTable(infotable = all_sections_subset
                                  platform="Visium")
 ``` 
 
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+end_time <- Sys.time()
+end_time
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+elapsed_time <- round((end_time-start_time), 3)
+elapsed_time
+```
+
 ## Section number - Manual Annotations
 
 Manually label each worm section with the section number. See https://giacomellolabst.shinyapps.io/brugiast-shiny/ for the worm sections with the corresponding section number. 
@@ -64,7 +76,12 @@ Manually label each worm section with the section number. See https://giacomello
 all_sections_subset_for_labels <- ManualAnnotation(all_sections_subset_for_labels)
 
 ``` 
-Time on manual annotations depends on how long it takes for one to label each section.
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+start_time1 <- Sys.time()
+start_time1
+```
 
 Transfer label to new metadata column called "section".
 
@@ -107,6 +124,7 @@ all_sections_subset.section.labeled
 
 ```
 
+
 ## Add additional metadata
 
 Add: sample, sub-array, slide, worm batch, ROI, embedding technique, treatment condition, combined label slide_subarray, combined label sample_section, combined label slide_subarray_sample_section
@@ -120,6 +138,29 @@ Create sampleid number metadata column
 all_sections_subset.section.labeled$sample_id <- paste0("", 1:9)[as.numeric(do.call(rbind, strsplit(colnames(all_sections_subset.section.labeled), split = "_"))[, 2])]
 
 all_sections_subset.section.labeled@meta.data
+
+```
+
+## Fix section names
+``` {r fix section names}
+
+smpl2_metdata <- all_sections_subset.section.labeled@meta.data[(all_sections_subset.section.labeled@meta.data$sample_id == "2"),]
+
+smpl2_metdata$section <- plyr::mapvalues(
+    x = smpl2_metdata$section, 
+    from = c("2","3","4","5","6","7","8","9","10","11","12"),
+    to = c("1","2","3","4","5","6","7","8","9","10","11")
+)
+
+```
+
+``` {r fix section names 2}
+
+#unique(smpl2_metdata$section)
+
+all_sections_subset.section.labeled@meta.data[rownames(smpl2_metdata),] <- smpl2_metdata
+
+unique(all_sections_subset.section.labeled@meta.data[(all_sections_subset.section.labeled@meta.data$sample_id == "2"),])
 
 ```
 
@@ -197,6 +238,7 @@ all_sections_subset.section.labeled$embed <- plyr::mapvalues(
 all_sections_subset.section.labeled@meta.data
 
 ```
+
 ## Worm sample
 
 Create worm sample metadata column
@@ -254,9 +296,9 @@ saveRDS(all_sections_subset.section.labeled, file = "bmalayi.all.labeles.rds")
 
 ``` {r save labeled object with metadata}
 
-write.csv(all_sections_subset.section.labeled@meta.data[,], file = "V10F24_041_metadata.csv")
+write.csv(all_sections_subset.section.labeled@meta.data[,], file = "V10F24_041_spots_seurat_metadata.csv")
 
-write.xlsx(all_sections_subset.section.labeled@meta.data[,], file = "V10F24_041_metadata.xlsx", col.names=TRUE, row.names=TRUE)
+write.xlsx(all_sections_subset.section.labeled@meta.data[,], file = "V10F24_041_spots_seurat_metadata.xlsx", col.names=TRUE, row.names=TRUE)
 
 ```
 

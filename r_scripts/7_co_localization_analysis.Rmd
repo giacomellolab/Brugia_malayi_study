@@ -119,7 +119,6 @@ brugia_wBm_de_genes_wilcox_deseq2_p0.05_fc0.1_comb
 
 
 ``` 
-
 Rename rows/genes
 ``` {r combine de genes 3}
 
