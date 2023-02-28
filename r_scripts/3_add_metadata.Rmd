@@ -135,7 +135,7 @@ Create sampleid number metadata column
 ```{r sampleid metdata}
 
 #also create sample_id metadata
-all_sections_subset.section.labeled$sample_id <- paste0("", 1:9)[as.numeric(do.call(rbind, strsplit(colnames(all_sections_subset.section.labeled), split = "_"))[, 2])]
+all_sections_subset.section.labeled$sample_id <- paste0("", 1:3)[as.numeric(do.call(rbind, strsplit(colnames(all_sections_subset.section.labeled), split = "_"))[, 2])]
 
 all_sections_subset.section.labeled@meta.data
 
