@@ -74,4 +74,4 @@ elapsed_time <- round((end_time-start_time), 3)
 elapsed_time
 ```
 
-Output is the versions of all package dependencies for running the R analysis scripts.
+Output is the versions of all package dependencies for running the R analysis script 5_treated_worm_analysis_r_linux.Rmd.
