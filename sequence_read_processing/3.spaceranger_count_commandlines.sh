@@ -1,6 +1,6 @@
 #!/bin/bash
 
-##ran with spanranger version 1.2.0 
+##ran with spanranger version 1.2.0
 module load spaceranger/1.2.0
 
 ##ran with TSO and polyA trimmed fastq files
@@ -37,6 +37,28 @@ spaceranger count --id=V10F24-041_201204_D1 \
                    --slide=V10F24-041 \
                    --area=D1 \
                    --loupe-alignment=V10F24-041-D1.json \
+                   --localcores=6 \
+                   --localmem=33
+
+spaceranger count --id=V10T03_275_210308_A1 \
+                  --transcriptome=/bmalayi_and_wBm \
+                  --fastqs=/V10T03_275/trimmed_fastq/A1 \
+                  --sample=V10T03_275_A1 \
+                  --image=V10T03_275_A1_small.jpg \
+                  --slide=V10T03-275 \
+                  --area=A1 \
+                  --loupe-alignment=V10T03-275-A1.json \
+                  --localcores=6 \
+                  --localmem=33
+
+spaceranger count --id=V10T03_300_210308_B1 \
+                   --transcriptome=/bmalayi_and_wBm \
+                   --fastqs=/V10T03_300/trimmed_fastq/B1 \
+                   --sample=V10T03_300_B1 \
+                   --image=V10T03_300_B1_small.jpg \
+                   --slide=V10T03-300 \
+                   --area=B1 \
+                   --loupe-alignment=V10T03-300-B1.json \
                    --localcores=6 \
                    --localmem=33
 
