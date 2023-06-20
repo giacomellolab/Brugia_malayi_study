@@ -1,0 +1,145 @@
+---
+title: "5_treated_worm_analysis"
+author: "Hailey Sounart"
+date: "6/20/2023"
+output: html_document
+---
+
+````{r, include = TRUE, echo = TRUE, message = TRUE}
+
+start_time <- Sys.time()
+start_time
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
+```
+
+```{r load packages}
+   library(STutility)
+  library(imager)
+  library(akima)
+  library(plotly)
+  library(raster)
+  library(dplyr)
+  library(magrittr)
+  library(ggplot2)
+  library(RColorBrewer)
+  library(stringr)
+  library(readxl)
+  library(purrr)
+  library(harmony)
+  library(tidyr)
+  library(Hmisc)
+  library(corrplot)
+  library(pheatmap)
+  library(cowplot)
+  library(ggpubr)
+
+```
+
+# Read in Normalized object
+
+``` {r read filt object}
+
+bmalay.treated_norm_obj <- readRDS("bmalay.treated.normalized.obj.rds")
+bmalay.treated_norm_obj 
+
+```
+
+
+# Genes of interest list
+
+## Colocalization DE genes
+
+Genes from control worm colocalization analysis 
+
+``` {r save pre filtered bmalayu object}
+
+colocal_de_genes <- c("bmalayi-WBGene00220277", "bmalayi-WBGene00220387", "bmalayi-WBGene00220555", "bmalayi-WBGene00220619", "bmalayi-WBGene00220737","bmalayi-WBGene00221112", "bmalayi-WBGene00221274", "bmalayi-WBGene00221322", "bmalayi-WBGene00221333", "bmalayi-WBGene00222232", "bmalayi-WBGene00222470", "bmalayi-WBGene00222474", "bmalayi-WBGene00222707", "bmalayi-WBGene00222803", "bmalayi-WBGene00223009","bmalayi-WBGene00223179", "bmalayi-WBGene00223435", "bmalayi-WBGene00223531", "bmalayi-WBGene00223985", "bmalayi-WBGene00223989", "bmalayi-WBGene00224169", "bmalayi-WBGene00224373", "bmalayi-WBGene00224389", "bmalayi-WBGene00224725", "bmalayi-WBGene00224931", "bmalayi-WBGene00225415", "bmalayi-WBGene00225426", "bmalayi-WBGene00225845", "bmalayi-WBGene00225880", "bmalayi-WBGene00226227", "bmalayi-WBGene00226270", "bmalayi-WBGene00226372", "bmalayi-WBGene00226417", "bmalayi-WBGene00226491", "bmalayi-WBGene00226649", "bmalayi-WBGene00226904", "bmalayi-WBGene00227756", "bmalayi-WBGene00228795", "bmalayi-WBGene00228825", "bmalayi-WBGene00228896", "bmalayi-WBGene00228981", "bmalayi-WBGene00229213", "bmalayi-WBGene00229316", "bmalayi-WBGene00229430", "bmalayi-WBGene00229607", "bmalayi-WBGene00229845", "bmalayi-WBGene00230007", "bmalayi-WBGene00230716", "bmalayi-WBGene00230858", "bmalayi-WBGene00230923", "bmalayi-WBGene00231090", "bmalayi-WBGene00231160", "bmalayi-WBGene00231182", "bmalayi-WBGene00231188", "bmalayi-WBGene00233153", "bmalayi-WBGene00233771", "bmalayi-WBGene00233912", "bmalayi-WBGene00233925", "bmalayi-WBGene00234156", "bmalayi-WBGene00234242", "bmalayi-WBGene00234295", "bmalayi-WBGene00234324", "bmalayi-WBGene00234326", "bmalayi-WBGene00268299", "bmalayi-WBGene00268831")
+
+length(colocal_de_genes)
+
+```
+
+Check if the genes are in the object
+``` {r save clustered object}
+
+length(colocal_de_genes[colocal_de_genes %in% rownames(bmalay.treated_norm_obj@assays$RNA[,])])
+
+length(colocal_de_genes[colocal_de_genes %in% rownames(bmalay.treated_norm_obj@assays$SCT[,])])
+
+```
+
+
+# Fold change between treated & control worms for genes of interest
+
+```{r eval=T}
+
+genes_of_interest_fc <- FoldChange(bmalay.treated_norm_obj, assay = "SCT", ident.1 = "doxycycline", ident.2 = "control", group.by = "condition", features = colocal_de_genes)
+genes_of_interest_fc 
+
+```
+
+# Save fold changes
+
+``` {r save text genes}
+
+saveRDS(genes_of_interest_fc , file = "genes_of_interest_fc.rds")
+
+```
+
+# Fold change between wolbachia positive & negative spots for genes of interest in treated worms
+
+```{r filter all gene object}
+
+bmalay.treated_norm_obj@meta.data$wolbachia <- ifelse((bmalay.treated_norm_obj@meta.data$counts.wBm >= 1), 1, 0)
+bmalay.treated_norm_obj@meta.data
+
+```
+
+## Split into control and doxy
+
+``` {r split objs}
+
+length(bmalay.treated_norm_obj@meta.data$condition[(bmalay.treated_norm_obj@meta.data$condition == "control")])
+length(bmalay.treated_norm_obj@meta.data$condition[(bmalay.treated_norm_obj@meta.data$condition == "doxycycline")])
+```
+
+``` {r split objs}
+
+ctrl_spots <- SubsetSTData(bmalay.treated_norm_obj, expression = condition == "control")
+ctrl_spots
+doxy_spots <- SubsetSTData(bmalay.treated_norm_obj, expression = condition == "doxycycline")
+doxy_spots
+```
+
+## Fold Change
+```{r eval=T}
+
+genes_of_interest_wol_fc <- FoldChange(doxy_spots, assay = "SCT", ident.1 = 1, ident.2 = 0, group.by = "wolbachia", features = colocal_de_genes)
+genes_of_interest_wol_fc
+```
+
+# Save fold changes
+
+``` {r save text genes}
+
+saveRDS(genes_of_interest_wol_fc , file = "genes_of_interest_wol_fc.rds")
+
+```
+
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+end_time <- Sys.time()
+end_time
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+elapsed_time <- round((end_time-start_time), 3)
+elapsed_time
+```
+
+Outputs are the genes of interest fold changes rds objects, used as input for the script 6_look_at_treated_analysis.Rmd.

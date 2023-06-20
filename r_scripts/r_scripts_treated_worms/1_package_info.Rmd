@@ -1,0 +1,82 @@
+---
+title: "1_package_info"
+author: "Hailey Sounart"
+date: "10/20/2022"
+output: html_document
+---
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+start_time <- Sys.time()
+start_time
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = TRUE, warning =FALSE)
+
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+Sys.time()
+
+```
+
+## Load all packages used in analysis
+
+```{r load packages}
+
+  library(STutility)
+  library(hdf5r)
+  library(imager)
+  library(akima)
+  library(plotly)
+  library(raster)
+  library(dplyr)
+  library(magrittr)
+  library(ggplot2)
+  library(RColorBrewer)
+  library(stringr)
+  library(openxlsx)
+  library(hash)
+  library(readxl)
+  library(purrr)
+  library(harmony)
+  library(tidyr)
+  library(DESeq2)
+  library(performance)
+  library(Hmisc)
+  library(corrplot)
+  library(pheatmap)
+  library(cowplot)
+  library(ggpubr)
+
+Sys.time()
+```
+
+
+## Get session information
+
+You can also embed plots, for example:
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+sessioninfo::session_info()
+
+Sys.time()
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+end_time <- Sys.time()
+end_time
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+elapsed_time <- round((end_time-start_time), 3)
+elapsed_time
+```
+
+Output is the versions of all package dependencies for running the R analysis scripts.

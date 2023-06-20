@@ -1,0 +1,131 @@
+---
+title: "Normalization"
+author: "Hailey Sounart"
+date: "3/1/2023"
+output: html_document
+---
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+start_time <- Sys.time()
+start_time
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
+```
+
+```{r load packages}
+  library(STutility)
+  library(hdf5r)
+  library(imager)
+  library(akima)
+  library(plotly)
+  library(raster)
+  library(dplyr)
+  library(magrittr)
+  library(ggplot2)
+  library(imager) 
+  library(magrittr)
+  library(RColorBrewer)
+  library(stringr)
+  library(openxlsx)
+  library(hash)
+  library(readxl)
+  library(purrr)
+  library(harmony)
+  library(DESeq2)
+```
+
+```{r set working directory}
+
+setwd("<path to working directory>")
+``` 
+
+# Read in Filtered Seurat Objects
+
+Read in filtered object
+``` {r read filt object}
+
+bmalay.treated_filt_obj <- readRDS("bmalayi.ctrl.doxy.filt.obj.rds")
+bmalay.treated_filt_obj
+
+```
+
+# Normalization
+
+## Split per section
+
+```{r subset each worm section}
+
+ctrl_doxy_filt_obj.unique.sect.names <- unique(bmalay.treated_filt_obj$sample_section)
+ctrl_doxy_filt_obj.unique.sect.names
+
+ctrl_doxy_filt_obj.section.list.nfeat <- lapply(ctrl_doxy_filt_obj.unique.sect.names, function(i){SubsetSTData(bmalay.treated_filt_obj, expression = (sample_section == i))})
+
+ctrl_doxy_filt_obj.section.list.nfeat
+```
+
+## Normalize each section object separately
+
+Unequal sections per sample for treated worms compared to control worms, will normalize each section separately.
+```{r normalize each section object separately}
+
+for (i in 1:length(ctrl_doxy_filt_obj.section.list.nfeat)) {
+  ctrl_doxy_filt_obj.section.list.nfeat[[i]] <- SCTransform(ctrl_doxy_filt_obj.section.list.nfeat[[i]], vars.to.regress = "nFeature_RNA", return.only.var.genes = FALSE)
+}
+
+```
+
+## Data integration
+```{r data intregration}
+
+integration.features<- SelectIntegrationFeatures(object.list = ctrl_doxy_filt_obj.section.list.nfeat, nfeatures = 7000)
+
+#modifying the maximum size of global variables
+options(future.globals.maxSize = 8000 * 1024^8)
+
+ctrl_doxy_filt_obj.section.list.nfeat.prep <- PrepSCTIntegration(object.list = ctrl_doxy_filt_obj.section.list.nfeat, anchor.features = integration.features, verbose = FALSE)
+
+```
+
+```{r save integration feats}
+
+saveRDS(integration.features, file = "integration.features.treated.rds")
+
+```
+
+## Merge
+
+``` {r merge normalized object}
+
+ctrl_doxy_filt_obj.section.list.nfeat.prep.merged <- MergeSTData(x = ctrl_doxy_filt_obj.section.list.nfeat.prep[[1]], y = ctrl_doxy_filt_obj.section.list.nfeat.prep[2:length(ctrl_doxy_filt_obj.section.list.nfeat.prep)], merge.data = TRUE)
+
+ctrl_doxy_filt_obj.section.list.nfeat.prep.merged
+
+```
+
+## Save Normalized object
+
+```{r save normalized object}
+
+#save control,doxy normalized data, merged
+ctrl_doxy_filt_obj.section.list.nfeat.prep.merged
+
+saveRDS(ctrl_doxy_filt_obj.section.list.nfeat.prep.merged, file = "bmalay.treated.normalized.obj.rds")
+
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+end_time <- Sys.time()
+end_time
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+elapsed_time <- round((end_time-start_time), 3)
+elapsed_time
+```
+
+The outputs are the integration features from SelectIntegrationFeatures, output of PrepSCTIntegration, and the normalized rds object of brugia count matrix and metadata. The normalized rds object of brugia count matrix and metadata are used in the next script 5_treated_worm_analysis_r_linux.Rmd.

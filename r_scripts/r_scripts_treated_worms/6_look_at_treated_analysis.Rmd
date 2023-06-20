@@ -1,0 +1,131 @@
+---
+title: "look_at_fold_change"
+author: "Hailey Sounart"
+date: "3/7/2023"
+output: html_document
+---
+
+````{r, include = TRUE, echo = TRUE, message = TRUE}
+
+start_time <- Sys.time()
+start_time
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
+```
+
+```{r load packages}
+  library(STutility)
+  library(hdf5r)
+  library(imager)
+  library(akima)
+  library(plotly)
+  library(raster)
+  library(dplyr)
+  library(magrittr)
+  library(ggplot2)
+  library(imager) 
+  library(magrittr)
+  library(RColorBrewer)
+  library(stringr)
+  library(openxlsx)
+  library(hash)
+  library(readxl)
+  library(purrr)
+  library(harmony)
+  library(DESeq2)
+```
+
+```{r set working directory}
+
+setwd("<path to working directory>")
+``` 
+
+# Read in Fold Changes
+
+``` {r read in fold changes}
+
+genes_of_interest_fc <- readRDS("genes_of_interest_fc.rds")
+genes_of_interest_fc 
+
+genes_of_interest_wol_fc <- readRDS("genes_of_interest_wol_fc.rds")
+genes_of_interest_wol_fc 
+
+```
+
+# Make into Supp Table format
+
+Rename rows/genes
+``` {r rename genes}
+
+genes_of_interest_fc_renamed <- genes_of_interest_fc
+genes_of_interest_fc_renamed_genes <- gsub("bmalayi-", "", rownames(genes_of_interest_fc_renamed))
+rownames(genes_of_interest_fc_renamed) <- genes_of_interest_fc_renamed_genes
+genes_of_interest_fc_renamed
+
+genes_of_interest_wol_fc_renamed <- genes_of_interest_wol_fc
+genes_of_interest_wol_fc_renamed_genes <- gsub("bmalayi-", "", rownames(genes_of_interest_wol_fc_renamed))
+rownames(genes_of_interest_wol_fc_renamed) <- genes_of_interest_wol_fc_renamed_genes
+genes_of_interest_wol_fc_renamed
+
+
+```
+
+Read in annotations
+```{r add annotations}
+
+#read in the bmalayi annotation file as a table
+all_bmalayi_gene_annotations <- read.table("brugia_malayi.gene_biotype_product.map.tsv", sep="\t", header=T, stringsAsFactors = F)
+all_bmalayi_gene_annotations
+
+```
+
+Add annotations into table
+```{r add annotations 2}
+
+#all_bmalayi_gene_annotations$gene_id
+all_bmalayi_gene_annotations_table <- all_bmalayi_gene_annotations
+rownames(all_bmalayi_gene_annotations_table) <- all_bmalayi_gene_annotations$gene_id
+all_bmalayi_gene_annotations_table
+
+all_bmalayi_gene_annotations_table <- all_bmalayi_gene_annotations_table[ , -which(names(all_bmalayi_gene_annotations_table) %in% "gene_id")]
+all_bmalayi_gene_annotations_table
+
+```
+
+Merge annotations into DE gene table
+```{r add annotations 3}
+
+genes_of_interest_fc_renamed_annot <- transform(merge(genes_of_interest_fc_renamed, all_bmalayi_gene_annotations_table,by="row.names",all.x=TRUE), row.names=Row.names, Row.names=NULL) #,all.y=TRUE
+genes_of_interest_fc_renamed_annot
+
+genes_of_interest_wol_fc_renamed_annot <- transform(merge(genes_of_interest_wol_fc_renamed, all_bmalayi_gene_annotations_table,by="row.names",all.x=TRUE), row.names=Row.names, Row.names=NULL) #,all.y=TRUE
+genes_of_interest_wol_fc_renamed_annot
+
+``` 
+
+## Save the DE gene lists
+```{r save colocal de genes}
+
+saveRDS(genes_of_interest_fc_renamed_annot, file = "genes_of_interest_fc_renamed_annot.rds")
+write.xlsx(genes_of_interest_fc_renamed_annot, file = "genes_of_interest_fc_renamed_annot.xlsx", col.names=TRUE, row.names=TRUE)
+
+saveRDS(genes_of_interest_wol_fc_renamed_annot, file = "genes_of_interest_wol_fc_renamed_annot.rds")
+write.xlsx(genes_of_interest_wol_fc_renamed_annot, file = "genes_of_interest_wol_fc_renamed_annot.xlsx", col.names=TRUE, row.names=TRUE)
+
+``` 
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+end_time <- Sys.time()
+end_time
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+elapsed_time <- round((end_time-start_time), 3)
+elapsed_time
+```
+
+Outputs are excel files containing the genes of interest and their fold change values, presented in Supplementary Table 8 and used to make the plots in Figure 6E-F.
