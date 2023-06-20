@@ -102,4 +102,4 @@ saveRDS(bmalay_filt_obj.list.nfeat.merged, file = "bmalay_filt_obj.list.nfeat.me
 
 ```
 
-The outputs are the integration features from SelectIntegrationFeatures, output of PrepSCTIntegration, and the normalized rds object of brugia count matrix and metadata. The integration features and normalized rds object of brugia count matrix and metadata are used in the next scripts, 6_clustering_analysis.Rmd, 7_co_localization_analysis.Rmd, and 8_3D_model_code.Rmd.
+The outputs are the integration features from SelectIntegrationFeatures, output of PrepSCTIntegration, and the normalized rds object of brugia count matrix and metadata. The integration features and normalized rds object of brugia count matrix and metadata are used in the next scripts, 6_clustering_analysis.Rmd, 7_co_localization_analysis.Rmd, and in the 3d_model_project.zip.
