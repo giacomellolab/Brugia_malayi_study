@@ -26,6 +26,7 @@ For the [r_scripts_treated_worms](https://github.com/giacomellolab/Brugia_malayi
 [6_look_at_treated_analysis.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/6_look_at_treated_analysis.Rmd) takes about 6 seconds to run.
 [1_package_info_r_linux.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/1_package_info_r_linux.Rmd) takes about 10 seconds to run.
 [5_treated_worm_analysis_r_linux.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/5_treated_worm_analysis_r_linux.Rmd) takes about 12 seconds to run.
+All outputs are specified within the Rmarkdown files.
 
 ## Installation
 
