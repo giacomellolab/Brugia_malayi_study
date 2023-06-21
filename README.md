@@ -21,7 +21,7 @@ For the [r_scripts_treated_worms](https://github.com/giacomellolab/Brugia_malayi
 
 [1_package_info.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/1_package_info.Rmd) takes about 20 seconds to run.
 [2_add_metadata_treated_worms.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/2_add_metadata_treated_worms.Rmd) takes about 3 minutes to run. 
-[3_quality_check_filtering_treated_worms.Rmd] (https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/3_quality_check_filtering_treated_worms.Rmd) takes about 25 seconds to run.
+[3_quality_check_filtering_treated_worms.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/3_quality_check_filtering_treated_worms.Rmd) takes about 25 seconds to run.
 [4_normalization_treated_worms.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/4_normalization_treated_worms.Rmd) takes about 50 seconds to run.
 [6_look_at_treated_analysis.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/6_look_at_treated_analysis.Rmd) takes about 6 seconds to run.
 [1_package_info_r_linux.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/1_package_info_r_linux.Rmd) takes about 10 seconds to run.
