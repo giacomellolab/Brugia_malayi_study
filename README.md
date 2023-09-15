@@ -9,10 +9,15 @@ All [sequence_read_processing](https://github.com/giacomellolab/Brugia_malayi_st
 The [r_scripts](https://github.com/giacomellolab/Brugia_malayi_study/tree/main/r_scripts) were run on macOS Catalina (v10.15.7) with 16 GB RAM. 
 
 [1_package_info.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/1_package_info.Rmd) and [2_make_brugia_wolbachia_gene_lists.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/2_make_brugia_wolbachia_gene_lists.Rmd) take about 20 seconds to run.
-[3_add_metadata.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/3_add_metadata.Rmd) and [6_clustering_analysis.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/6_clustering_analysis.Rmd) take about 25 seconds to run.
+[3_add_metadata.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/3_add_metadata.Rmd) takes about 25 seconds to run. 
 [4_quality_check_filtering.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/4_quality_check_filtering.Rmd) takes about 4 minutes to run.
 [5_normalization.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/5_normalization.Rmd) takes about 35 seconds to run.
+[6_clustering_analysis.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/6_clustering_analysis.Rmd) takes about 40 seconds to run.
 [7_co_localization_analysis.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/7_co_localization_analysis.Rmd) takes about 45 seconds to run. 
+[8_genes_on_tissue_visualization.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/8_genes_on_tissue_visualization.Rmd) takes about 3.5 minutes to run.
+[9_wolbachia_abundance_variation.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/9_wolbachia_abundance_variation.Rmd) takes about 20 seconds to run.
+[10_package_info.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/10_package_info.Rmd) takes about 10 seconds to run.
+[10_wolbachia_density_correlation_analysis.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/10_wolbachia_density_correlation_analysis.Rmd) takes about 1 minute to run.
 All outputs are specified within the Rmarkdown files.
 
 The 3D model analysis [3D_model](https://github.com/giacomellolab/Brugia_malayi_study/tree/main/3D_model) was run on macOS Big Sur/Monterey (v10.16) with 32 GB RAM. The run times and outputs are specified within the Rmarkdown files.
@@ -21,9 +26,10 @@ For the [r_scripts_treated_worms](https://github.com/giacomellolab/Brugia_malayi
 
 [1_package_info.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/1_package_info.Rmd) takes about 20 seconds to run.
 [2_add_metadata_treated_worms.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/2_add_metadata_treated_worms.Rmd) takes about 3 minutes to run. 
-[3_quality_check_filtering_treated_worms.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/3_quality_check_filtering_treated_worms.Rmd) takes about 25 seconds to run.
-[4_normalization_treated_worms.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/4_normalization_treated_worms.Rmd) takes about 50 seconds to run.
-[6_look_at_treated_analysis.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/6_look_at_treated_analysis.Rmd) takes about 6 seconds to run.
+[3_quality_check_filtering_treated_worms.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/3_quality_check_filtering_treated_worms.Rmd) takes about 30 seconds to run.
+[4_normalization_treated_worms.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/4_normalization_treated_worms.Rmd) takes about 1 minute to run.
+[6_look_at_treated_analysis.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/6_look_at_treated_analysis.Rmd) takes about 20 seconds to run.
+[7_genes_on_tissue_visualization_treated_worms.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/7_genes_on_tissue_visualization_treated_worms.Rmd) takes about 4 minutes to run.
 [1_package_info_r_linux.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/1_package_info_r_linux.Rmd) takes about 10 seconds to run.
 [5_treated_worm_analysis_r_linux.Rmd](https://github.com/giacomellolab/Brugia_malayi_study/blob/main/r_scripts/r_scripts_treated_worms/5_treated_worm_analysis_r_linux.Rmd) takes about 12 seconds to run.
 All outputs are specified within the Rmarkdown files.
