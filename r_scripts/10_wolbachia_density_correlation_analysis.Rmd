@@ -26,7 +26,7 @@ library(cowplot)
 
 ```{r set working directory}
 
-#setwd("<path to working directory where count matrices for all samples reside>")
+setwd("<path to working directory where count matrices for all samples reside>")
 
 ``` 
 
