@@ -23,8 +23,8 @@ knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FAL
 
 ```{r set working directory}
 
-#setwd("<path to working directory where count matrices for all samples reside>")
-setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/")
+setwd("<path to working directory where count matrices for all samples reside>")
+
 ``` 
 
 ## Load processed data (spaceranger outputs)
