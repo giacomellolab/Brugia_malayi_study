@@ -26,8 +26,8 @@ knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FAL
 
 ```{r set working directory}
 
-#setwd("<path to working directory>")
-setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/r_scripts_treated_worms")
+setwd("<path to working directory>")
+
 ``` 
 
 
@@ -72,11 +72,11 @@ doxy_spots
 
 # Path to the raw HE images used as input for spaceranger
 
-high_res_image_list <- c("/Users/hailey.sounart/Documents/brugia_malayi/old_analysis/all_sections_analysis//high_res_images/210304_V10T03_275_Worms_HE_HS-Spot000001_25perc.jpg",
-                                "/Users/hailey.sounart/Documents/brugia_malayi/old_analysis/all_sections_analysis//high_res_images/210304_V10T03_275_Worms_HE_HS-Spot000001_25perc.jpg",
-                                "/Users/hailey.sounart/Documents/brugia_malayi/old_analysis/all_sections_analysis//high_res_images/210304_V10T03_275_Worms_HE_HS-Spot000001_25perc.jpg",
-                                "/Users/hailey.sounart/Documents/brugia_malayi/old_analysis/all_sections_analysis//high_res_images/210304_V10T03_275_Worms_HE_HS-Spot000001_25perc.jpg",
-                                "/Users/hailey.sounart/Documents/brugia_malayi/old_analysis/all_sections_analysis//high_res_images/210208_worm_bmalayi_V10T03_300_HE_HS_B1-Spot000001_25perc.jpg")
+high_res_image_list <- c("/spaceranger-inputs/V10T03_275_A1_small.jpg",
+                         "/spaceranger-inputs/V10T03_275_A1_small.jpg",
+                         "/spaceranger-inputs/V10T03_275_A1_small.jpg",
+                         "/spaceranger-inputs/V10T03_275_A1_small.jpg",
+                         "/spaceranger-inputs/V10T03_300_B1_small.jpg")
 
 ```
 
