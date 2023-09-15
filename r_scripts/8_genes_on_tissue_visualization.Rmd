@@ -25,8 +25,8 @@ knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FAL
 
 ```{r set working directory}
 
-#setwd("<path to working directory where count matrices for all samples reside>")
-setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/")
+setwd("<path to working directory where count matrices for all samples reside>")
+
 ``` 
 
 # Read in clustered object
@@ -87,9 +87,9 @@ colocal_genes_rename
 
 # Path to the raw HE images used as input for spaceranger
 
-high_res_image_list <- c("/Users/hailey.sounart/Documents/brugia_malayi/220815_final_code/spaceranger-inputs/V10F24_041_A1/V10F24_041_A1_small.jpg",
-                         "/Users/hailey.sounart/Documents/brugia_malayi/220815_final_code/spaceranger-inputs/V10F24_041_B1/V10F24_041_B1_small.jpg",
-                         "/Users/hailey.sounart/Documents/brugia_malayi/220815_final_code/spaceranger-inputs/V10F24_041_D1/V10F24_041_D1_small.jpg")
+high_res_image_list <- c("/spaceranger-inputs/V10F24_041_A1/V10F24_041_A1_small.jpg",
+                         "/spaceranger-inputs/V10F24_041_B1/V10F24_041_B1_small.jpg",
+                         "/spaceranger-inputs/V10F24_041_D1/V10F24_041_D1_small.jpg")
 ```
 
 # Load the images
