@@ -23,8 +23,8 @@ knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FAL
 
 ```{r set working directory}
 
-#setwd("<path to working directory>")
-setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/r_scripts_treated_worms")
+setwd("<path to working directory>")
+
 ``` 
 
 # Read in Fold Changes
