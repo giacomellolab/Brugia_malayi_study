@@ -12,43 +12,25 @@ knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = TRUE, warning =FALS
 ## Load all packages used in analysis
 
 ```{r load packages}
-
   library(STutility)
-  library(hdf5r)
-  library(imager)
-  library(akima)
-  library(plotly)
-  library(raster)
-  library(dplyr)
-  library(magrittr)
-  library(ggplot2)
-  library(RColorBrewer)
   library(stringr)
   library(openxlsx)
-  library(hash)
-  library(readxl)
-  library(purrr)
-  library(harmony)
   library(tidyr)
-  library(DESeq2)
-  library(performance)
-  library(Hmisc)
-  library(corrplot)
-  library(pheatmap)
-  library(cowplot)
+  library(ggplot2)
   library(ggpubr)
-
+  library(dplyr)
+  library(harmony)
+  library(EnhancedVolcano)
+  library(magrittr)
+  library(magick)
+  library(grid)
 ```
 
-
 ## Get session information
-
-You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
 
 sessioninfo::session_info()
 
-
 ```
-Output is the versions of all package dependencies for running the R analysis scripts.
+Output is the versions of all package dependencies for running the R analysis scripts 2_make_brugia_wolbachia_gene_lists.Rmd, 3_add_metadata.Rmd, 4_quality_check_filtering.Rmd, 5_normalization.Rmd, 6_clustering_analysis.Rmd, 7_co_localization_analysis.Rmd, 8_genes_on_tissue_visualization.Rmd, and 9_wolbachia_abundance_variation.Rmd.

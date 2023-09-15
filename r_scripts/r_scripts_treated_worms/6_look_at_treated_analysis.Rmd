@@ -1,5 +1,5 @@
 ---
-title: "look_at_fold_change"
+title: "6_look_at_treated_analysis"
 author: "Hailey Sounart"
 date: "3/7/2023"
 output: html_document
@@ -17,29 +17,14 @@ knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FAL
 
 ```{r load packages}
   library(STutility)
-  library(hdf5r)
-  library(imager)
-  library(akima)
-  library(plotly)
-  library(raster)
-  library(dplyr)
-  library(magrittr)
   library(ggplot2)
-  library(imager) 
-  library(magrittr)
-  library(RColorBrewer)
-  library(stringr)
   library(openxlsx)
-  library(hash)
-  library(readxl)
-  library(purrr)
-  library(harmony)
-  library(DESeq2)
 ```
 
 ```{r set working directory}
 
-setwd("<path to working directory>")
+#setwd("<path to working directory>")
+setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/r_scripts_treated_worms")
 ``` 
 
 # Read in Fold Changes
@@ -94,7 +79,7 @@ all_bmalayi_gene_annotations_table
 
 ```
 
-Merge annotations into DE gene table
+Merge annotations into gene table
 ```{r add annotations 3}
 
 genes_of_interest_fc_renamed_annot <- transform(merge(genes_of_interest_fc_renamed, all_bmalayi_gene_annotations_table,by="row.names",all.x=TRUE), row.names=Row.names, Row.names=NULL) #,all.y=TRUE
@@ -105,16 +90,55 @@ genes_of_interest_wol_fc_renamed_annot
 
 ``` 
 
-## Save the DE gene lists
-```{r save colocal de genes}
+## Save the gene lists
+```{r save colocal genes}
 
-saveRDS(genes_of_interest_fc_renamed_annot, file = "genes_of_interest_fc_renamed_annot.rds")
-write.xlsx(genes_of_interest_fc_renamed_annot, file = "genes_of_interest_fc_renamed_annot.xlsx", col.names=TRUE, row.names=TRUE)
+# Supplementary Data 9
 
-saveRDS(genes_of_interest_wol_fc_renamed_annot, file = "genes_of_interest_wol_fc_renamed_annot.rds")
-write.xlsx(genes_of_interest_wol_fc_renamed_annot, file = "genes_of_interest_wol_fc_renamed_annot.xlsx", col.names=TRUE, row.names=TRUE)
+saveRDS(genes_of_interest_fc_renamed_annot, file = "Supplementary_Data_9A.rds")
+write.xlsx(genes_of_interest_fc_renamed_annot, file = "Supplementary_Data_9A.xlsx", col.names=TRUE, row.names=TRUE)
+
+saveRDS(genes_of_interest_wol_fc_renamed_annot, file = "Supplementary_Data_9B.rds")
+write.xlsx(genes_of_interest_wol_fc_renamed_annot, file = "Supplementary_Data_9B.xlsx", col.names=TRUE, row.names=TRUE)
 
 ``` 
+
+## Plot - Figure 6E
+
+### Read in Normalized object
+
+``` {r read norm object}
+
+bmalay.treated_norm_obj <- readRDS("bmalay.treated.normalized.obj.rds")
+bmalay.treated_norm_obj 
+
+```
+
+### Add wolbachia metadata to brugia object
+
+```{r add wol}
+
+bmalay.treated_norm_obj@meta.data$wolbachia <- ifelse((bmalay.treated_norm_obj@meta.data$counts.wBm >= 1), 1, 0)
+bmalay.treated_norm_obj@meta.data
+
+```
+
+```{r text genes}
+
+wol_treated_text_genes <- c("bmalayi-WBGene00231090", "bmalayi-WBGene00234242", "bmalayi-WBGene00230716", "bmalayi-WBGene00233153", "bmalayi-WBGene00227756","bmalayi-WBGene00234295", "bmalayi-WBGene00225880", "bmalayi-WBGene00233912", "bmalayi-WBGene00221322", "bmalayi-WBGene00226491","bmalayi-WBGene00220387", "bmalayi-WBGene00224725", "bmalayi-WBGene00222232", "bmalayi-WBGene00224389")
+wol_treated_text_genes
+
+```
+
+### Dotplot
+```{r dotplot}
+
+merge_wol_dotplot <- DotPlot(bmalay.treated_norm_obj, assay = "SCT", features = wol_treated_text_genes, cols ="RdBu",  group.by = "wolbachia", split.by = "condition", dot.scale = 10) + RotatedAxis() + scale_x_discrete(labels = c("bmalayi-WBGene00231090" = "Bma-cul-2", "bmalayi-WBGene00234242" = "Bm13981","bmalayi-WBGene00230716" = "Bm10455", "bmalayi-WBGene00233153" = "Bm12892", "bmalayi-WBGene00227756" = "Bma-try-1", "bmalayi-WBGene00234295" = "Bm14034", "bmalayi-WBGene00225880" = "Bma-cyb-3", "bmalayi-WBGene00233912" = "Bma-ubq-2", "bmalayi-WBGene00221322" = "Bm1061", "bmalayi-WBGene00226491" = "Bma-lap-2", "bmalayi-WBGene00220387" = "Bm126", "bmalayi-WBGene00224725" = "Bma-glb-19", "bmalayi-WBGene00222232" = "Bma-snx-1","bmalayi-WBGene00224389" = "Bma-ned-8")) + scale_y_discrete(labels = c("1_doxycycline" = "W+ T", "1_control" = "W+ C", "0_doxycycline" = "W- T", "0_control" = "W- C")) + xlab("Genes") + ylab("Condition")
+merge_wol_dotplot
+
+ggsave(file = paste0("Figure_6E.pdf"), plot = merge_wol_dotplot, width = 10, height =5, dpi = 300)
+
+```
 
 ```{r, include = TRUE, echo = TRUE, message = TRUE}
 
@@ -128,4 +152,4 @@ elapsed_time <- round((end_time-start_time), 3)
 elapsed_time
 ```
 
-Outputs are excel files containing the genes of interest and their fold change values, presented in Supplementary Table 8 and used to make the plots in Figure 6E-F.
+Outputs are excel files containing the genes of interest and their fold change values, presented in Supplementary Data 9. The output dotplot is presented in Figure 6E. 

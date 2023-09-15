@@ -1,0 +1,204 @@
+---
+title: "9_wolbachia_abundance_variation"
+author: "Hailey Sounart"
+date: "9/1/2023"
+output: html_document
+---
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+start_time <- Sys.time()
+start_time
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
+```
+
+```{r load packages}
+  library(STutility)
+  library(ggplot2)
+  library(openxlsx)
+```
+
+```{r set working directory}
+
+#setwd("<path to working directory where count matrices for all samples reside>")
+setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/")
+``` 
+
+# Read in clustered object
+
+``` {r load clustered object}
+
+brugia_clu_obj <- readRDS("bmalayi_clusters.rds")
+brugia_clu_obj
+
+```
+
+# Wolbachia abundance variation across samples
+```{r}
+
+sample_levels <- c("BM1","BM2","BM3")
+brugia_clu_obj@meta.data$worm_sample <- factor(x = brugia_clu_obj@meta.data$worm_sample, levels = sample_levels)
+
+```
+
+```{r}
+
+#Supplementary Figure 2A
+
+fill <- c("#AEC7E8","#009E73","#0072B2")
+
+wolbachia_vln_smpls <- VlnPlot(brugia_clu_obj, features = c("counts.wBm"), split.by = "worm_sample", group.by = "worm_sample", cols = fill, pt.size = 0) 
+wolbachia_vln_smpls
+
+ggsave(file = "Supplementary_Figure_2A.pdf", plot = wolbachia_vln_smpls, dpi = 300)
+
+```
+
+# Wolbachia abundance variation across sections
+
+```{r}
+
+unique(brugia_clu_obj@meta.data$sample_section)
+length(unique(brugia_clu_obj@meta.data$sample_section))
+section_levels <- c("BM1_1","BM1_2","BM1_3","BM1_4","BM1_5","BM1_6","BM1_7","BM1_8","BM1_9","BM2_1","BM2_2","BM2_3","BM2_4","BM2_5","BM2_6","BM2_7","BM2_8","BM2_9","BM2_10","BM2_11","BM3_1","BM3_2","BM3_3","BM3_4","BM3_7","BM3_8","BM3_9","BM3_10","BM3_11","BM3_12")
+brugia_clu_obj@meta.data$sample_section <- factor(x = brugia_clu_obj@meta.data$sample_section, levels = section_levels)
+
+```
+
+```{r}
+
+#Supplementary Figure 2B
+
+fill_3 <- c("#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2")
+
+wolbachia_vln_sections <- VlnPlot(brugia_clu_obj, features = c("counts.wBm"), split.by = "sample_section", group.by = "sample_section", cols = fill_3, pt.size = 0)
+wolbachia_vln_sections
+
+ggsave(file = "Supplementary_Figure_2B.pdf", plot = wolbachia_vln_sections , dpi = 300, height = 400, width = 600, units = "mm")
+
+```
+
+# Wolbachia counts per cluster
+
+```{r rename clus numbers}
+
+new_clus_names <- brugia_clu_obj
+new_clus_names$seurat_clusters <- factor(brugia_clu_obj$seurat_clusters, 
+         levels = c("0", "1", "2", "3"), 
+         labels = c("1", "2", "3", "4"))
+
+new_clus_names@meta.data
+```
+
+```{r}
+
+#Supplementary Figure 2C
+
+fill=c("#41ab5d","#fc9272","#4292c6","#df65b0")
+
+wolbachia_vln_clu <-  VlnPlot(new_clus_names, features = c("counts.wBm"), split.by = "seurat_clusters", group.by = "seurat_clusters", pt.size = 0, cols = fill)
+wolbachia_vln_clu
+
+ggsave(file = "Supplementary_Figure_2C.pdf", plot = wolbachia_vln_clu, dpi = 300)
+```
+
+# Bin Wolbachia counts
+
+```{r}
+
+#no Wolbachia (None)
+none_spots <- rownames(brugia_clu_obj@meta.data[(brugia_clu_obj@meta.data$counts.wBm == 0),])
+
+#1-2 UMIs for Wolbachia per spot (Low)
+above.zero <- brugia_clu_obj@meta.data[(brugia_clu_obj@meta.data$counts.wBm > 0),]
+one_and_two <- above.zero[(above.zero$counts.wBm < 3),]
+low_spots <- rownames(one_and_two)
+
+#3-9 UMIs for Wolbachia per spot (Medium)
+above.two <- brugia_clu_obj@meta.data[(brugia_clu_obj@meta.data$counts.wBm > 2),]
+three_to_nine <- above.two[(above.two$counts.wBm < 10),]
+medium_spots <- rownames(three_to_nine)
+
+#>=10 UMIs for Wolbachia per spot (High)
+above.and.ten <- brugia_clu_obj@meta.data[(brugia_clu_obj@meta.data$counts.wBm >= 10),]
+high_spots <- rownames(above.and.ten)
+
+```
+
+# Create dataframe for MFuzz
+
+```{r}
+
+#First create metadata label for each spot based on its wolbachia abundance group
+
+brugia_clu_obj_none_spots <- SubsetSTData(brugia_clu_obj, spots = none_spots)
+brugia_clu_obj_none_spots@meta.data$wol_abund_group = "None"
+
+brugia_clu_obj_low_spots <- SubsetSTData(brugia_clu_obj, spots = low_spots)
+brugia_clu_obj_low_spots@meta.data$wol_abund_group = "Low"
+
+brugia_clu_obj_medium_spots <- SubsetSTData(brugia_clu_obj, spots = medium_spots)
+brugia_clu_obj_medium_spots@meta.data$wol_abund_group = "Medium"
+
+brugia_clu_obj_high_spots <- SubsetSTData(brugia_clu_obj, spots = high_spots)
+brugia_clu_obj_high_spots@meta.data$wol_abund_group = "High"
+
+```
+
+```{r}
+
+#merge back together
+wol_group_lbls_merged <- MergeSTData(brugia_clu_obj_none_spots, c(brugia_clu_obj_low_spots, brugia_clu_obj_medium_spots, brugia_clu_obj_high_spots), merge.data = TRUE)
+
+#spot labels appear in wol_abund_group column
+wol_group_lbls_merged@meta.data
+
+```
+
+```{r}
+
+umis.all.sum <- wol_group_lbls_merged@assays$SCT@counts
+avg.expr.all <- lapply(unique(wol_group_lbls_merged$wol_abund_group), function(treat) {
+  umis_subset.all.sum <- umis.all.sum[, wol_group_lbls_merged$wol_abund_group %in% treat]  #subset counts dataframe
+  print(class(umis_subset.all.sum))
+  log1p(Matrix::rowMeans(umis_subset.all.sum))
+})  
+  
+avg.expr.all <- as.data.frame(avg.expr.all)
+colnames(avg.expr.all) <- unique(wol_group_lbls_merged$wol_abund_group)
+wol_abund_group_avg_df <- avg.expr.all
+wol_abund_group_avg_df
+
+```
+
+```{r}
+
+saveRDS(wol_abund_group_avg_df, file = "wol_abund_group_avg_df.rds") #used as input for MFuzz
+write.xlsx(wol_abund_group_avg_df, file = "wol_abund_group_avg_df.xlsx", col.names=TRUE, row.names=TRUE)
+
+```
+
+```{r}
+
+bmalayi_exp_norm_genes <- rownames(wol_abund_group_avg_df) 
+bmalayi_exp_norm_genes <- gsub("bmalayi-", "", bmalayi_exp_norm_genes)
+
+write.xlsx(bmalayi_exp_norm_genes, file = "bmalayi_exp_norm_genes.xlsx", col.names=TRUE, row.names=TRUE) #used as input for BioMart 
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+end_time <- Sys.time()
+end_time
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+elapsed_time <- round((end_time-start_time), 3)
+elapsed_time
+```
+
+Output is Supplementary Figure 2A-C plots and excel files used as input for MFuzz and BioMart in the script 10_wolbachia_density_correlation_analysis.Rmd.

@@ -5,34 +5,28 @@ date: "8/16/2022"
 output: html_document
 ---
 
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+start_time <- Sys.time()
+start_time
+```
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
 ```
 
 ```{r load packages}
   library(STutility)
-  library(hdf5r)
-  library(imager)
-  library(akima)
-  library(plotly)
-  library(raster)
   library(dplyr)
-  library(magrittr)
   library(ggplot2)
-  library(imager) 
-  library(magrittr)
-  library(RColorBrewer)
-  library(stringr)
   library(openxlsx)
-  library(hash)
-  library(readxl)
-  library(purrr)
   library(harmony)
 ```
 
 ```{r set working directory}
 
-setwd("<path to working directory where count matrices for all samples reside>")
+#setwd("<path to working directory where count matrices for all samples reside>")
+setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/")
 ``` 
 
 ## Read in bmalayi normalized data
@@ -56,7 +50,6 @@ length(bmalayi_sctransform_per_sample_norm_obj_int_feats)
 
 PCA
 ``` {r dim reduction}
-
 
 bmalayi_sctransform_per_sample_norm_obj.PCA <- RunPCA(object = bmalayi_sctransform_per_sample_norm_obj, assay = "SCT", features = bmalayi_sctransform_per_sample_norm_obj_int_feats)
 
@@ -83,16 +76,18 @@ bmalayi_sctransform_per_sample_norm_obj.PCA.harmony <- RunUMAP(bmalayi_sctransfo
 
 ```
 
-
 ## View Clusters
 
 ```{r view clusters}
 
-fill=c("#41ab5d","#fc9272","#4292c6","#df65b0")
+# Figure 2B
+
+fill=c("#41ab5d","#fc9272","#4292c6","#dd648f")
 
 DimPlot(bmalayi_sctransform_per_sample_norm_obj.PCA.harmony, label = FALSE, cols = fill, pt.size = 3)
 
 ```
+
 ## Save PCA, harmony object
 
 ``` {r save clustered object}
@@ -114,23 +109,15 @@ markers_per_clu
 
 ``` {r filt cluster markers}
 
+#filter for less than p-value adjusted < 0.05
 markers_per_clu_filt <- markers_per_clu[(markers_per_clu$p_val_adj < 0.05),]
 markers_per_clu_filt
 
-```
-
-## combined into DE genes into 1 table
-
-Separate each cluster markers by cluster
-``` {r split cluster markers}
-
+#split for each cluster
 markers_per_clu_filt_list <- split(markers_per_clu_filt, markers_per_clu_filt$cluster)
 markers_per_clu_filt_list
 
-```
-
-Rename genes
-``` {r rename genes}
+#rename rownames
 markers_per_clu_filt_list_rename <- lapply(markers_per_clu_filt_list, function(i) {
   rownames(i) <- i$gene
   i
@@ -138,33 +125,276 @@ markers_per_clu_filt_list_rename <- lapply(markers_per_clu_filt_list, function(i
 markers_per_clu_filt_list_rename
 
 ```
+```{r merge all filt clu dataframes}
+
+markers_per_clu_filt_list_1_2_rename_merged <- transform(merge(markers_per_clu_filt_list_rename[[1]], markers_per_clu_filt_list_rename[[2]],by="row.names",all.x=TRUE,all.y=TRUE), row.names=Row.names, Row.names=NULL)
+markers_per_clu_filt_list_1_2_rename_merged
+
+markers_per_clu_filt_list_1_2_3_rename_merged <- transform(merge(markers_per_clu_filt_list_1_2_rename_merged, markers_per_clu_filt_list_rename[[3]],by="row.names",all.x=TRUE,all.y=TRUE), row.names=Row.names, Row.names=NULL) #,all.y=TRUE
+markers_per_clu_filt_list_1_2_3_rename_merged
+
+markers_per_clu_filt_list_rename_merged <- transform(merge(markers_per_clu_filt_list_1_2_3_rename_merged, markers_per_clu_filt_list_rename[[4]],by="row.names",all.x=TRUE,all.y=TRUE), row.names=Row.names, Row.names=NULL)
+markers_per_clu_filt_list_rename_merged
+
+``` 
+
+```{r rename filt clu genes}
+
+#rename genes
+
+filt_clu_genes <- rownames(markers_per_clu_filt_list_rename_merged)
+
+filt_clu_genes_renamed <- gsub("bmalayi-", "", filt_clu_genes)
+#filt_clu_genes_renamed
+```
+
+
+## combined DE genes into 1 table
+
+Rename genes
+``` {r rename clu all genes}
+
+#Rename genes
+
+markers_per_clu
+markers_per_clu_renamed <- markers_per_clu
+markers_per_clu_renamed_genes <- gsub("bmalayi-", "", rownames(markers_per_clu_renamed))
+rownames(markers_per_clu_renamed) <- markers_per_clu_renamed_genes
+markers_per_clu_renamed
+
+markers_per_clu_renamed$gene <- gsub("bmalayi-", "", (markers_per_clu_renamed$gene))
+markers_per_clu_renamed
+
+```
+
+
+``` {r split cluster markers}
+
+#Separate each cluster markers by cluster
+
+markers_per_clu_list <- split(markers_per_clu_renamed, markers_per_clu_renamed$cluster)
+markers_per_clu_list
+
+```
+
+
+``` {r fix clu gene names}
+
+#Rename genes
+
+markers_per_clu_list_rename <- lapply(markers_per_clu_list, function(i) {
+  rownames(i) <- i$gene
+  i
+})
+markers_per_clu_list_rename
+
+```
+
 
 ```{r merge dataframes 1}
 
-markers_per_clu_filt_list_1_2_rename_merged <- transform(merge(markers_per_clu_filt_list_rename[[1]], markers_per_clu_filt_list_rename[[2]],by="row.names",all.x=TRUE,all.y=TRUE), row.names=Row.names, Row.names=NULL) #,all.y=TRUE
-markers_per_clu_filt_list_1_2_rename_merged
+markers_per_clu_list_1_2_rename_merged <- transform(merge(markers_per_clu_list_rename[[1]], markers_per_clu_list_rename[[2]],by="row.names",all.x=TRUE,all.y=TRUE), row.names=Row.names, Row.names=NULL)
+markers_per_clu_list_1_2_rename_merged
 
 ``` 
 
 ```{r merge dataframes 2}
 
-markers_per_clu_filt_list_1_2_3_rename_merged <- transform(merge(markers_per_clu_filt_list_1_2_rename_merged, markers_per_clu_filt_list_rename[[3]],by="row.names",all.x=TRUE,all.y=TRUE), row.names=Row.names, Row.names=NULL) #,all.y=TRUE
-markers_per_clu_filt_list_1_2_3_rename_merged
+markers_per_clu_list_1_2_3_rename_merged <- transform(merge(markers_per_clu_list_1_2_rename_merged, markers_per_clu_list_rename[[3]],by="row.names",all.x=TRUE,all.y=TRUE), row.names=Row.names, Row.names=NULL) #,all.y=TRUE
+markers_per_clu_list_1_2_3_rename_merged
 
 ``` 
 
 ```{r merge dataframes 3}
 
-markers_per_clu_filt_list_rename_merged <- transform(merge(markers_per_clu_filt_list_1_2_3_rename_merged, markers_per_clu_filt_list_rename[[4]],by="row.names",all.x=TRUE,all.y=TRUE), row.names=Row.names, Row.names=NULL) #,all.y=TRUE
-markers_per_clu_filt_list_rename_merged
+markers_per_clu_list_rename_merged <- transform(merge(markers_per_clu_list_1_2_3_rename_merged, markers_per_clu_list_rename[[4]],by="row.names",all.x=TRUE,all.y=TRUE), row.names=Row.names, Row.names=NULL)
+markers_per_clu_list_rename_merged
 
 ``` 
 
-## Save cluster marker genes
+```{r edit clu markers table}
+
+#remove columns
+clu_markers_df <- markers_per_clu_list_rename_merged %>% select(-cluster.x, -gene.x, -cluster.y, -gene.y, -cluster.x.1, -gene.x.1, -cluster.y.1, -gene.y.1)
+
+#rename columns
+colnames(clu_markers_df) <- c("p_val.1","avg_logFC.1","pct.1.1","pct.2.1","p_val_adj.1","p_val.2","avg_logFC.2","pct.1.2","pct.2.2","p_val_adj.2","p_val.3","avg_logFC.3","pct.1.3","pct.2.3","p_val_adj.3","p_val.4","avg_logFC.4","pct.1.4","pct.2.4","p_val_adj.4")
+clu_markers_df
+
+```
+
+```{r filt clu table}
+
+#select genes with adjusted p-value < 0.05 for genes that are markers for a specific cluster
+clu_markers_df_select <- clu_markers_df[(rownames(clu_markers_df) %in% filt_clu_genes_renamed),]
+clu_markers_df_select
+```
+## Read in annotations
+```{r read in bmalayi annotation}
+
+#read in the bmalayi annotation file as a table
+all_bmalayi_gene_annotations <- read.table("brugia_malayi.gene_biotype_product.map.tsv", sep="\t", header=T, stringsAsFactors = F)
+all_bmalayi_gene_annotations
+
+```
+
+## Add anotations into table
+
+```{r filt annot table}
+
+filt_annot_table <- all_bmalayi_gene_annotations[(all_bmalayi_gene_annotations$gene_id %in% rownames(clu_markers_df_select)), ]
+rownames(filt_annot_table) <- filt_annot_table$gene_id
+filt_annot_table
+
+```
+
+```{r merge dataframes annot}
+
+#Merge annotations into dataframe
+clu_markers_df_select_with_annotation <- transform(merge(clu_markers_df_select, filt_annot_table,by="row.names",all.x=TRUE), row.names=Row.names, Row.names=NULL) #,all.y=TRUE
+clu_markers_df_select_with_annotation
+colnames(clu_markers_df_select_with_annotation)[colnames(clu_markers_df_select_with_annotation) == 'gene_id'] <- 'gene'
+clu_markers_df_select_with_annotation
+
+``` 
+
+## Save cluster marker genes (Supplementary Data 2)
 
 ``` {r save cluster de marker genes}
 
-write.xlsx(markers_per_clu_filt_list_rename_merged , file = "clus_de_genes_p0.05.xlsx", col.names=TRUE, row.names=TRUE)
+#Supplementary Data 2
+write.xlsx(clu_markers_df_select_with_annotation, file = "Supplementary_Data_2.xlsx", col.names=TRUE, row.names=TRUE)
 ```
 
-The outputs are the dimensionally reduced, integrated with harmony rds object with clusters and the deferentially expressed marker genes per cluster in an excel file. The dimensionally reduced, integrated with harmony rds object of brugia count matrix and metadata is used to make the plots shown in Figure 2A-C, for the functional term enrichment analysis performed to generate Figure 2E and Supplementary Table 4, Figure 3A-F, and Figure 4A-D. The output of the deferentially expressed marker genes per cluster in an excel file is Supplementary Table 3 and were used to make plot Figure 2D.
+## Plots
+
+### Figure 2B
+
+```{r rename clus numbers}
+
+new_clus_names <- bmalayi_sctransform_per_sample_norm_obj.PCA.harmony
+new_clus_names$seurat_clusters <- factor(bmalayi_sctransform_per_sample_norm_obj.PCA.harmony$seurat_clusters, 
+         levels = c("0", "1", "2", "3"), 
+         labels = c("1", "2", "3", "4"))
+
+new_clus_names@meta.data
+```
+
+```{r save umap}
+
+#Figure 2B
+
+fill=c("#41ab5d","#fc9272","#4292c6","#dd648f")
+
+clu_umap <- DimPlot(new_clus_names, group.by = "seurat_clusters", label = FALSE, cols = fill, pt.size = 3) 
+clu_umap
+
+ggsave(file = "Figure_2B.pdf", plot = clu_umap , width = 15, height =10, dpi = 300)
+
+```
+
+### Figure 3
+
+``` {r text genes}
+
+text_genes <- c("Bm7941", "Bm2751", "Bm8720", "Bm6643", "Bma-cul-2", "Bma-cyb-3","Bm13981", "Bma-gld-1", "Bma-ubq-2", "Bm13653", "Bm2195", "Bma-hsp-25", "Bma-far-1", "Bm12803", "Bma-cht-1.2", "Bm4112","Bm13693", "Bma-nmad-1", "Bm12794", "Bm5705", "Bma-hsp-17", "Bma-enpl-1", "Bm2151", "Bma-prdx-2", "Bma-rpt-4", "Bma-ned-8", "Bm11071", "Bm2854", "Bma-col-109", "Bma-pqn-35", "Bm2467", "Bma-ctg-1")
+length(text_genes)
+
+```
+
+```{r text genes other name}
+
+clus_text_genes <- c("WBGene00228202", "WBGene00223012", "WBGene00228981", "WBGene00226904", "WBGene00231090", "WBGene00225880", "WBGene00234242", "WBGene00226227", "WBGene00233912", "WBGene00233914", "WBGene00222456", "WBGene00222349", "WBGene00223407", "WBGene00233064", "WBGene00223435", "WBGene00224373", "WBGene00233954", "WBGene00223499", "WBGene00233055", "WBGene00225966", "WBGene00230858", "WBGene00225845", "WBGene00222412", "WBGene00223487", "WBGene00223805", "WBGene00224389", "WBGene00231332", "WBGene00223115", "WBGene00226682", "WBGene00230319", "WBGene00222728", "WBGene00224893")
+length(clus_text_genes)
+
+clus_text_genes_rename <- paste0("bmalayi-", clus_text_genes)
+length(clus_text_genes_rename)
+
+```
+
+
+```{r plot dotplot clus}
+
+#Figure 3A
+
+text_genes_clus_dotplot <- DotPlot(new_clus_names, assay = "SCT", clus_text_genes_rename, cols = c("#feebe2", "#7a0177"), group.by = "seurat_clusters", dot.scale = 10) + RotatedAxis() + scale_x_discrete(labels = c("bmalayi-WBGene00228202" = "Bm7941", "bmalayi-WBGene00223012" = "Bm2751", "bmalayi-WBGene00228981" = "Bm8720", "bmalayi-WBGene00226904"= "Bm6643", "bmalayi-WBGene00231090" = "Bma-cul-2", "bmalayi-WBGene00225880" = "Bma-cyb-3", "bmalayi-WBGene00234242" = "Bm13981", "bmalayi-WBGene00226227" = "Bma-gld-1", "bmalayi-WBGene00233912" = "Bma-ubq-2", "bmalayi-WBGene00233914"= "Bm13653", "bmalayi-WBGene00222456" = "Bm2195", "bmalayi-WBGene00222349" = "Bma-hsp-25", "bmalayi-WBGene00223407" = "Bma-far-1", "bmalayi-WBGene00233064" = "Bm12803", "bmalayi-WBGene00223435" = "Bma-cht-1.2", "bmalayi-WBGene00224373" = "Bm4112", "bmalayi-WBGene00233954" = "Bm13693", "bmalayi-WBGene00223499" = "Bma-nmad-1", "bmalayi-WBGene00233055" = "Bm12794", "bmalayi-WBGene00225966" = "Bm5705", "bmalayi-WBGene00230858" = "Bma-hsp-17", "bmalayi-WBGene00225845" = "Bma-enpl-1", "bmalayi-WBGene00222412" = "Bm2151", "bmalayi-WBGene00223487" = "Bma-prdx-2", "bmalayi-WBGene00223805" = "Bma-rpt-4", "bmalayi-WBGene00224389" = "Bma-ned-8", "bmalayi-WBGene00231332" = "Bm11071", "bmalayi-WBGene00223115" = "Bm2854", "bmalayi-WBGene00226682" = "Bma-col-109", "bmalayi-WBGene00230319" = "Bma-pqn-35", "bmalayi-WBGene00222728" = "Bm2467", "bmalayi-WBGene00224893" = "Bma-ctg-1")) + xlab("Genes") + ylab("Cluster")
+text_genes_clus_dotplot
+
+ggsave(file = "Figure_3A.pdf", plot = text_genes_clus_dotplot, width = 15, height =5, dpi = 300)
+
+```
+
+```{r plot clus violins}
+
+#Figure 3B-F
+
+genes_of_interest <- c("bmalayi-WBGene00228202", "bmalayi-WBGene00223012", "bmalayi-WBGene00223435", "bmalayi-WBGene00233055", "bmalayi-WBGene00231332", "bmalayi-WBGene00223115", "bmalayi-WBGene00230858")
+
+vln_list <- lapply(genes_of_interest, function(gene) {
+  vln_plot <- VlnPlot(new_clus_names, assay = "SCT", features = gene, pt.size = 0, cols = fill, group.by = "seurat_clusters") + xlab("Cluster") + ylab("UMI counts per spot (normalized)")
+  return(vln_plot)
+})
+
+vln_list
+
+ggsave(file = paste0("Figure_3B_WBGene00228202_Bm7941", ".pdf"), plot = vln_list[[1]], width = 15, height =10, dpi = 300)
+ggsave(file = paste0("Figure_3C_WBGene00223012_Bm2751", ".pdf"), plot = vln_list[[2]], width = 15, height =10, dpi = 300)
+ggsave(file = paste0("Figure_3D_WBGene00223435_Bma-cht-1.2", ".pdf"), plot = vln_list[[3]], width = 15, height =10, dpi = 300)
+ggsave(file = paste0("Figure_3E_WBGene00233055_Bm12794", ".pdf"), plot = vln_list[[4]], width = 15, height =10, dpi = 300)
+ggsave(file = paste0("Figure_3F_WBGene00231332_Bm11071", ".pdf"), plot = vln_list[[5]], width = 15, height =10, dpi = 300)
+ggsave(file = paste0("Figure_3F_WBGene00223115_Bm2854", ".pdf"), plot = vln_list[[6]], width = 15, height =10, dpi = 300)
+ggsave(file = paste0("Figure_3F_WBGene00230858_Bma-hsp-17", ".pdf"), plot = vln_list[[7]], width = 15, height =10, dpi = 300)
+
+```
+### Figure 4
+
+```{r gly genes}
+
+gly_genes <- c("WBGene00225841","WBGene00225960","WBGene00223600")
+#glycolysis_genes
+
+gly_genes_rename <- paste0("bmalayi-", gly_genes)
+#glycolysis_genes_rename
+
+```
+
+```{r plot gly genes dotplot}
+
+#Figure 4A
+
+gly_text_dotplot <- DotPlot(new_clus_names, assay = "SCT", gly_genes_rename, cols = c("#fef0d9", "#b30000"), group.by = "seurat_clusters", dot.scale = 10) + RotatedAxis() + scale_x_discrete(labels = c("bmalayi-WBGene00225841" = "Bma-aldo-1", "bmalayi-WBGene00225960" = "Bm5699", "bmalayi-WBGene00223600" = "Bma-ldh-1")) + xlab("Genes") + ylab("Cluster")
+gly_text_dotplot
+
+ggsave(file = "Figure_4A.pdf", plot = gly_text_dotplot, width = 5, height =5, dpi = 300)
+```
+
+```{r plot gly violins}
+
+#Figure 4B-D
+
+gly_vln_list <- lapply(gly_genes_rename, function(gly_gene) {
+  vln_plot <- VlnPlot(new_clus_names, assay = "SCT", features = gly_gene, pt.size = 0, cols = fill, group.by = "seurat_clusters") + xlab("Cluster") + ylab("UMI counts per spot (normalized)")
+  return(vln_plot)
+})
+
+gly_vln_list
+
+ggsave(file = paste0("Figure_4B_WBGene00225841_Bma-aldo-1", ".pdf"), plot = gly_vln_list[[1]], width = 15, height =10, dpi = 300)
+ggsave(file = paste0("Figure_4C_WBGene00225960_Bm5699", ".pdf"), plot = gly_vln_list[[2]], width = 15, height =10, dpi = 300)
+ggsave(file = paste0("Figure_4D_WBGene00223600_Bma-ldh-1", ".pdf"), plot = gly_vln_list[[3]], width = 15, height =10, dpi = 300)
+
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+end_time <- Sys.time()
+end_time
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+elapsed_time <- round((end_time-start_time), 3)
+elapsed_time
+```
+
+The outputs are the dimensionally reduced, integrated with harmony rds object with clusters, the deferentially expressed marker genes per cluster in an excel file in Supplementary Data 2, and the plots used in Figure 2B, Figure 3A-F, and Figure 4A-D. The dimensionally reduced, integrated with harmony, and clustered rds object of brugia count matrix and metadata is used to make the plots shown in Figure 2D and used for the functional term enrichment analysis performed to generate Figure 2E and Supplementary Data 3. The output clustered object is used in the analysis scripts 7_co_localization_analysis.Rmd, 8_genes_on_tissue_visualization.Rmd, and 9_wolbachia_abundance_variation.Rmd.

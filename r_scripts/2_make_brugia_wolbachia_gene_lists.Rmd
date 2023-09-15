@@ -5,35 +5,27 @@ date: "8/15/2022"
 output: html_document
 ---
 
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+start_time1 <- Sys.time()
+start_time1
+```
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
 ```
 
 ```{r load packages}
   library(STutility)
-  library(hdf5r)
-  library(imager)
-  library(akima)
-  library(plotly)
-  library(raster)
-  library(dplyr)
-  library(magrittr)
-  library(ggplot2)
-  library(imager) 
-  library(magrittr)
-  library(RColorBrewer)
   library(stringr)
   library(openxlsx)
-  library(hash)
-  library(readxl)
-  library(purrr)
-  library(harmony)
   library(tidyr)
 ```
 
 ```{r set working directory}
 
-setwd("<path to working directory where count matrices for all samples reside>")
+#setwd("<path to working directory where count matrices for all samples reside>")
+setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/")
 ``` 
 
 ## Get Brugia malayi genes
@@ -58,7 +50,7 @@ bmalayi_genes <- paste("bmalayi-", bmalayi_genes, sep="")
 
 ## Save brugia malayi all genes list
 
-```{r save rRNA}
+```{r save all genes list}
 
 length(bmalayi_genes)
 
@@ -170,7 +162,7 @@ write.xlsx(all_ribo_genes, file = "ribosomal_genes/bmalayi_ribo_genes.xlsx", col
 ```
 
 ## Combine rRNA and ribosomal genes into a single list
-```{r save ribosomal genes}
+```{r save rRNA and ribosomal genes}
 
 bmalayi_rRNA_ribo_genes <- c(bmalayi_rRNA_genes, all_ribo_genes)
 #bmalayi_rRNA_ribo_genes
@@ -185,7 +177,7 @@ write.xlsx(bmalayi_rRNA_ribo_genes, file = "rRNA_and_ribo_genes/bmalayi_rRNA_and
 
 ```
 
-## Get Brugia malayi Mitochondiral genes
+## Get Brugia malayi mitochondiral genes
 
 ```{r see mitochondrial protein coding genes}
 
@@ -418,6 +410,18 @@ write.csv(all_wBm_genes, file = "wBm_all_genes/all_wBm_genes.csv")
 
 write.xlsx(all_wBm_genes, file = "wBm_all_genes/all_wBm_genes.xlsx", col.names=TRUE, row.names=TRUE)
 
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+end_time1 <- Sys.time()
+end_time1
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+elapsed_time1 <- round((end_time1-start_time1), 3)
+elapsed_time1
 ```
 
 Outputs are all the genes lists saved in 3 formats: rds object, excel file, and csv file. The output gene lists are of all brugia genes, brugia rRNA and ribosomal genes, brugia mitochondrial genes, brugia protein coding genes, brugia protein coding genes without ribosomal genes, brugia protein coding genes without mitochondrial genes, brugia protein coding genes without mitochondrial and ribosomal genes, and Wolbachia (wBm) genes. 

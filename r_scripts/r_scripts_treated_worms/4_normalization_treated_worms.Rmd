@@ -1,5 +1,5 @@
 ---
-title: "Normalization"
+title: "4_Normalization"
 author: "Hailey Sounart"
 date: "3/1/2023"
 output: html_document
@@ -17,29 +17,13 @@ knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FAL
 
 ```{r load packages}
   library(STutility)
-  library(hdf5r)
-  library(imager)
-  library(akima)
-  library(plotly)
-  library(raster)
-  library(dplyr)
-  library(magrittr)
-  library(ggplot2)
-  library(imager) 
-  library(magrittr)
-  library(RColorBrewer)
-  library(stringr)
-  library(openxlsx)
-  library(hash)
-  library(readxl)
-  library(purrr)
-  library(harmony)
-  library(DESeq2)
 ```
 
 ```{r set working directory}
 
-setwd("<path to working directory>")
+#setwd("<path to working directory>")
+setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/r_scripts_treated_worms")
+
 ``` 
 
 # Read in Filtered Seurat Objects
@@ -128,4 +112,4 @@ elapsed_time <- round((end_time-start_time), 3)
 elapsed_time
 ```
 
-The outputs are the integration features from SelectIntegrationFeatures, output of PrepSCTIntegration, and the normalized rds object of brugia count matrix and metadata. The normalized rds object of brugia count matrix and metadata are used in the next script 5_treated_worm_analysis_r_linux.Rmd.
+The outputs are the integration features from SelectIntegrationFeatures, output of PrepSCTIntegration, and the normalized rds object of brugia count matrix and metadata. The normalized rds object of brugia count matrix and metadata are used in the scripts 5_treated_worm_analysis_r_linux.Rmd, 6_look_at_treated_analysis.Rmd, and 7_genes_on_tissue_visualization_treated_worms.Rmd.

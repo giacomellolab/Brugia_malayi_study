@@ -1,0 +1,32 @@
+---
+title: "10_package_info"
+author: "Hailey Sounart"
+date: "10/20/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = TRUE, warning =FALSE)
+```
+
+## Load all packages used in analysis
+
+```{r load packages}
+library(Mfuzz)
+library(openxlsx)
+library(topGO)
+library(ggplot2)
+library(biomaRt)
+library(cowplot)
+```
+
+
+## Get session information
+
+```{r pressure, echo=FALSE}
+
+sessioninfo::session_info()
+
+```
+
+Output is the versions of all package dependencies for running the R analysis script 10_wolbachia_density_correlation_analysis.Rmd.

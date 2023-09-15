@@ -1,5 +1,5 @@
 ---
-title: "QC and filtering"
+title: "3_quality_check_filtering_treated_worms"
 author: "Hailey Sounart"
 date: "2/28/2023"
 output: html_document
@@ -16,37 +16,16 @@ knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FAL
 ```
 
 ```{r load packages}
-   library(STutility)
-  library(hdf5r)
-  library(imager)
-  library(akima)
-  library(plotly)
-  library(raster)
-  library(dplyr)
-  library(magrittr)
+  library(STutility)
   library(ggplot2)
-  library(imager) 
-  library(magrittr)
-  library(RColorBrewer)
-  library(stringr)
-  library(openxlsx)
-  library(hash)
-  library(readxl)
-  library(purrr)
-  library(harmony)
-  library(DESeq2)
-  library(performance)
-  library(Hmisc)
-  library(corrplot)
-  library(pheatmap)
-  library(performance)
-  library(cowplot)
   library(ggpubr)
 ```
 
 ```{r set working directory}
 
-setwd("<path to working directory>")
+#setwd("<path to working directory>")
+setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/r_scripts_treated_worms")
+
 ``` 
 
 # Load pre-filtered object, contains metadata
@@ -240,7 +219,9 @@ bmalayi.treated.0.gene.filt@meta.data$condition <- factor(x = bmalayi.treated.0.
 
 ```{r plot cond violins}
 
-fill <- c("#e78ac3","#fc8d62") #"#f4cae4","#fdcdac"
+# Figure 6D
+
+fill <- c("#e78ac3","#fc8d62")
 
 bmalayi_vlnplot_unique_gene_cond_no_pt <- VlnPlot(bmalayi.treated.0.gene.filt, features = c("nFeature_RNA"), split.by = "condition", group.by = "wolbachia", cols = fill, pt.size = 0)
 bmalayi_vlnplot_umi_cond_no_pt  <- VlnPlot(bmalayi.treated.0.gene.filt, features = c("nCount_RNA"), split.by = "condition", group.by = "wolbachia", cols = fill, pt.size = 0)
@@ -250,18 +231,23 @@ bmalayi_vlnplot_umi_cond_no_pt  <- VlnPlot(bmalayi.treated.0.gene.filt, features
 
 ```{r plot cond violins 2}
 
+# Figure 6D
+
 bmalayi_vlnplot_unique_gene_cond_no_pt 
 bmalayi_vlnplot_umi_cond_no_pt  
 
 ``` 
 
+```{r}
+dir.create(paste0("qc_plots"))
+```
 
 ```{r plot cond violins 3}
 
-dir.create(paste0("qc_plots"))
+# Figure 6D
 
-ggsave(file = "qc_plots/bmalayi_violin_plot_umis_cond_no_pt.pdf", plot = bmalayi_vlnplot_umi_cond_no_pt, dpi = 300)
-ggsave(file = "qc_plots/bmalayi_violin_plot_genes_cond_no_pt.pdf", plot = bmalayi_vlnplot_unique_gene_cond_no_pt, dpi = 300)
+ggsave(file = "Figure_6D_umi.pdf", plot = bmalayi_vlnplot_umi_cond_no_pt, dpi = 300)
+ggsave(file = "Figure_6D_genes.pdf", plot = bmalayi_vlnplot_unique_gene_cond_no_pt, dpi = 300)
 
 ``` 
 
@@ -282,6 +268,8 @@ doxy_spots@meta.data$sample_section <- factor(x = doxy_spots@meta.data$sample_se
 
 ```{r plot unique sections}
 
+# Figure 6A
+
 treated_sects_fill <- c("#8da0cb", "#8da0cb", "#8da0cb", "#8da0cb", "#8da0cb")
 
 bmalayi.treated_vlnplot_unique_gene_section_no_pt <- VlnPlot(doxy_spots, features = c("nFeature_RNA"), split.by = "sample_section", group.by = "sample_section", cols = treated_sects_fill, pt.size = 0)
@@ -293,8 +281,8 @@ bmalayi.treated_vlnplot_umi_section_no_pt
 ``` 
 ```{r plot unique sections 2}
 
-ggsave(file = "qc_plots/bmalayi.treated_vlnplot_umi_section.pdf", plot = bmalayi.treated_vlnplot_umi_section_no_pt, dpi = 300)
-ggsave(file = "qc_plots/bmalayi.treated_vlnplot_unique_gene_section.pdf", plot = bmalayi.treated_vlnplot_unique_gene_section_no_pt, dpi = 300)
+ggsave(file = "Figure_6A_umi.pdf", plot = bmalayi.treated_vlnplot_umi_section_no_pt, dpi = 300)
+ggsave(file = "Figure_6A_gene.pdf", plot = bmalayi.treated_vlnplot_unique_gene_section_no_pt, dpi = 300)
 
 ``` 
 
@@ -319,18 +307,32 @@ worm_sample_raw_unfil_df
 Treated worm sample comparisons
 ```{r treated worms smpl corrs}
 
-
 colnames(worm_sample_raw_unfil_df) <- c("T1", "T2")
 worm_sample_raw_unfil_df
 
-p1 <- ggplot(worm_sample_raw_unfil_df, aes(T1, T2)) + geom_point(alpha = 1,colour = "#8da0cb") + stat_cor(method = "pearson", label.x = 0, label.y = 3.7) + geom_smooth(method = "lm", fullrange=TRUE, color="#8da0cb", se = TRUE, level = 0.95)  + theme_minimal() + labs(title="Average gene expression between treated samples",
-       x="Treated worm T1 (log (1 + avg raw UMI counts per spot))", y = "Treated worm T2 (log (1 + avg raw UMI counts per spot))")
+p1 <- ggplot(worm_sample_raw_unfil_df, aes(T1, T2)) + 
+  geom_point(alpha = 1,colour = "#8da0cb") + 
+  stat_cor(method = "pearson", label.x = 0, label.y = 3.7, p.accuracy = 1e-323) + 
+  geom_smooth(method = "lm", fullrange=TRUE, color="#8da0cb", se = TRUE, level = 0.95)  + 
+  theme_minimal() + 
+  labs(title="Average gene expression between treated samples",
+       x="Treated worm T1 (log (1 + avg raw UMI counts per spot))", 
+       y = "Treated worm T2 (log (1 + avg raw UMI counts per spot))") +
+  theme(axis.text.y = element_text(hjust = 1, color = "black"),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "black"),
+        axis.line = element_line(color = "black"),
+        plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank(),  # Remove panel background
+        axis.ticks.length = unit(0.25, "cm"),  # Adjust the length of the tick marks if needed
+        axis.text.x = element_text(color = "black"))
 
 p1
 
 ggsave(file = "qc_plots/bmalayi.treated_corr_worm_smpl.pdf", plot = p1, dpi = 300)
 
 ``` 
+
 ## Correlation plots - per section for treated worms
 
 ```{r treated worms section matrix}
@@ -352,10 +354,7 @@ worm_section_raw_unfil_df
 Treated worm section comparisons
 ```{r treated worms section corrs}
 
-
-colnames(worm_section_raw_unfil_df) <- c("T1_1","T1_3","T1_4","T1_5","T2_1")
-worm_section_raw_unfil_df
-
+# Figure 6B plots
 
 for (i in colnames(worm_section_raw_unfil_df)) {
   first_section <- i
@@ -370,9 +369,24 @@ for (i in colnames(worm_section_raw_unfil_df)) {
     p <- aes_(as.name(first_section), as.name(second_section))
     print(p)
     
-    p <- ggplot(worm_section_raw_unfil_df, aes_(as.name(first_section),as.name(second_section))) + geom_point(alpha = 1,colour = "#8da0cb") + stat_cor(method = "pearson", label.x = 0, label.y = 3.7) + geom_smooth(method = "lm", fullrange=TRUE, color="#8da0cb", se = TRUE, level = 0.95)  + theme_minimal() + labs(title="Average gene expression between treated samples",           x=paste0("Treated worm ", first_section, " (log (1 + avg raw UMI counts per spot))"), y = paste0("Treated worm", second_section, " (log (1 + avg raw UMI counts per spot))"))
+    p <- ggplot(worm_section_raw_unfil_df, aes_(as.name(first_section),as.name(second_section))) + 
+      geom_point(alpha = 1,colour = "#8da0cb") + 
+      stat_cor(method = "pearson", label.x = 0, label.y = 3.7, p.accuracy = 1e-323) + 
+      geom_smooth(method = "lm", fullrange=TRUE, color="#8da0cb", se = TRUE, level = 0.95)  + 
+      theme_minimal() + 
+      labs(title="Average gene expression between treated samples", 
+           x=paste0("Treated worm ", first_section, "(log (1 + avg raw UMI counts per spot))"), 
+           y = paste0("Treated worm", second_section, "(log (1 + avg raw UMI counts per spot))")) +
+      theme(axis.text.y = element_text(hjust = 1, color = "black"),
+            panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            axis.ticks = element_line(color = "black"),
+            axis.line = element_line(color = "black"),
+            plot.title = element_text(hjust = 0.5),
+            panel.background = element_blank(),  # Remove panel background
+            axis.ticks.length = unit(0.25, "cm"),  # Adjust the length of the tick marks if needed
+            axis.text.x = element_text(color = "black"))
     
-    ggsave(file = paste0("qc_plots/bmalayi.treated_corr_worm_raw_unfilt_section_", first_section, "_", second_section, ".pdf"), plot = p, dpi = 300)
+    ggsave(file = paste0("qc_plots/Figure_6B_", first_section, "_", second_section, ".pdf"), plot = p, dpi = 300)
   }
 }
 
@@ -414,10 +428,13 @@ wBm_vlnplot_unique_gene_cond_no_pt
 wBm_vlnplot_umi_cond_no_pt  
 
 ``` 
+
 ```{r violin plots sample 4}
 
-ggsave(file = "qc_plots/wBm_vlnplot_unique_gene_cond_no_pt .pdf", plot = wBm_vlnplot_unique_gene_cond_no_pt , dpi = 300)
-ggsave(file = "qc_plots/wBm_vlnplot_umi_cond_no_pt.pdf", plot = wBm_vlnplot_umi_cond_no_pt, dpi = 300)
+# Figure 6C
+
+ggsave(file = "Figure_6C_gene.pdf", plot = wBm_vlnplot_unique_gene_cond_no_pt , dpi = 300)
+ggsave(file = "Figure_6C_umi.pdf", plot = wBm_vlnplot_umi_cond_no_pt, dpi = 300)
 
 ``` 
 
@@ -464,7 +481,7 @@ Filter low quality spots
 ```{r filter ctrl spots}
 
 #same filtering criteria as used previously for the control worms
-ctrl_spots.spot.filt <- SubsetSTData(ctrl_spots_filt, expression = nFeature_RNA >= 30 & nCount_RNA >= 50 & percent.mito < 3 & percent.ribo < 30 & nCount_RNA < 10000) #& percent.mito < 10 & percent.ribo < 40
+ctrl_spots.spot.filt <- SubsetSTData(ctrl_spots_filt, expression = nFeature_RNA >= 30 & nCount_RNA >= 50 & percent.mito < 3 & percent.ribo < 30 & nCount_RNA < 10000)
 cat("Spots removed: ", ncol(ctrl_spots_filt) - ncol(ctrl_spots.spot.filt), "\n")
 cat("Spots remaining: ", ncol(ctrl_spots.spot.filt), "\n")
 cat("Percent Spots remaining: ", (ncol(ctrl_spots.spot.filt)/ncol(ctrl_spots_filt)*100), "\n")

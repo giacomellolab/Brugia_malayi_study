@@ -5,6 +5,12 @@ date: "8/15/2022"
 output: html_document
 ---
 
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+start_time <- Sys.time()
+start_time
+```
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
 ```
@@ -12,28 +18,13 @@ knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FAL
 ## Load packages
 ```{r load packages}
   library(STutility)
-  library(hdf5r)
-  library(imager)
-  library(akima)
-  library(plotly)
-  library(raster)
-  library(dplyr)
-  library(magrittr)
-  library(ggplot2)
-  library(imager) 
-  library(magrittr)
-  library(RColorBrewer)
-  library(stringr)
   library(openxlsx)
-  library(hash)
-  library(readxl)
-  library(purrr)
-  library(harmony)
 ```
 
 ```{r set working directory}
 
-setwd("<path to the directory where count matrices for all samples reside>")
+#setwd("<path to working directory where count matrices for all samples reside>")
+setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/")
 ``` 
 
 ## Load processed data (spaceranger outputs)
@@ -107,7 +98,7 @@ saveRDS(all_sections_subset_labeled.on_labeled_spot, file = "bmalayi.manually.se
 
 ```
 
-See "V10F24_041_spots_seurat_metadata.xlsx" in the github directory "https://github.com/giacomellolab/Brugia_malayi_study/tree/main/data" for how the spot section metadata ends up
+See "V10F24_041_spots_seurat_metadata.xlsx" in the github directory "https://github.com/giacomellolab/Brugia_malayi_study/tree/main/data" for how the spot section metadata ends up (from the code below)
 
 ## Read in Labeled Object
 
@@ -118,7 +109,7 @@ all_sections_subset.section.labeled <- readRDS("bmalayi.manually.section.labeled
 ```
 
 Look at object
-``` {r save labeled object}
+``` {r see labeled object}
 
 all_sections_subset.section.labeled
 
@@ -138,29 +129,6 @@ Create sampleid number metadata column
 all_sections_subset.section.labeled$sample_id <- paste0("", 1:3)[as.numeric(do.call(rbind, strsplit(colnames(all_sections_subset.section.labeled), split = "_"))[, 2])]
 
 all_sections_subset.section.labeled@meta.data
-
-```
-
-## Fix section names
-``` {r fix section names}
-
-smpl2_metdata <- all_sections_subset.section.labeled@meta.data[(all_sections_subset.section.labeled@meta.data$sample_id == "2"),]
-
-smpl2_metdata$section <- plyr::mapvalues(
-    x = smpl2_metdata$section, 
-    from = c("2","3","4","5","6","7","8","9","10","11","12"),
-    to = c("1","2","3","4","5","6","7","8","9","10","11")
-)
-
-```
-
-``` {r fix section names 2}
-
-#unique(smpl2_metdata$section)
-
-all_sections_subset.section.labeled@meta.data[rownames(smpl2_metdata),] <- smpl2_metdata
-
-unique(all_sections_subset.section.labeled@meta.data[(all_sections_subset.section.labeled@meta.data$sample_id == "2"),])
 
 ```
 
@@ -317,10 +285,10 @@ all_sections_subset_QC <- readRDS("bmalayi.all.labeles.rds")
 #load in the list(s) of ribosomal genes
 
 #load in rRNA genes
-bmalayi_rRNA_gene_list <- readRDS("rRNA_genes/bmalayi_rRNA_genes.rds") #refhook = NULL
+bmalayi_rRNA_gene_list <- readRDS("rRNA_genes/bmalayi_rRNA_genes.rds")
 
 #load in ribosomal protein coding genes
-bmalayi_ribo_gene_list <- readRDS("ribosomal_genes/bmalayi_ribo_genes.rds") #refhook = NULL
+bmalayi_ribo_gene_list <- readRDS("ribosomal_genes/bmalayi_ribo_genes.rds")
 
 #combine rRNA and ribosomal protein coding genes into a single list
 bmalayi_all_ribo_list_210622 <- c(bmalayi_rRNA_gene_list, bmalayi_ribo_gene_list)
@@ -515,10 +483,22 @@ saveRDS(all_sections_subset_QC, file = "bmalayi.pre.filtered.rds")
 
 ``` {r save meta.data}
 
-write.csv(all_sections_subset_QC@meta.data[,], file = "V10F24_041_extended_metadata.csv")
+write.csv(all_sections_subset_QC@meta.data[,], file = "V10F24_041_spots_seurat_metadata.csv")
 
-write.xlsx(all_sections_subset_QC@meta.data[,], file = "V10F24_041_extended_metadata.xlsx", col.names=TRUE, row.names=TRUE)
+write.xlsx(all_sections_subset_QC@meta.data[,], file = "V10F24_041_spots_seurat_metadata.xlsx", col.names=TRUE, row.names=TRUE)
 
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+end_time1 <- Sys.time()
+end_time1
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+elapsed_time1 <- round((end_time1-start_time1), 3)
+elapsed_time1
 ```
 
 Output is the metadata, contained in the rds object, used in the remaining analysis script and the brugia count matrix and metadata rds object used in the next script, 4_quality_check_filtering.Rmd.

@@ -5,42 +5,26 @@ date: "8/15/2022"
 output: html_document
 ---
 
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+start_time <- Sys.time()
+start_time
+```
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
 ```
 
 ```{r load packages}
-   library(STutility)
-  library(hdf5r)
-  library(imager)
-  library(akima)
-  library(plotly)
-  library(raster)
-  library(dplyr)
-  library(magrittr)
+  library(STutility)
   library(ggplot2)
-  library(imager) 
-  library(magrittr)
-  library(RColorBrewer)
-  library(stringr)
-  library(openxlsx)
-  library(hash)
-  library(readxl)
-  library(purrr)
-  library(harmony)
-  library(DESeq2)
-  library(performance)
-  library(Hmisc)
-  library(corrplot)
-  library(pheatmap)
-  library(performance)
-  library(cowplot)
   library(ggpubr)
 ```
 
 ```{r set working directory}
 
-setwd("<path to working directory where count matrices for all samples reside>")
+#setwd("<path to working directory where count matrices for all samples reside>")
+setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/")
 ``` 
 
 ## Load pre-filtered object, contains metadata
@@ -122,25 +106,31 @@ all_section_QC_bmalayi_obj.gene.filt@meta.data$worm_sample <- factor(x = all_sec
 
 ```{r violin plots sample 2}
 
+# Figure 1B plots
+
 fill <- c("#AEC7E8","#009E73","#0072B2")
 
 bmalayi_vlnplot_unique_gene_sample_no_pt <- VlnPlot(all_section_QC_bmalayi_obj.gene.filt, features = c("nFeature_RNA"), split.by = "worm_sample", group.by = "worm_sample", cols = fill, pt.size = 0)
 bmalayi_vlnplot_umi_sample_no_pt  <- VlnPlot(all_section_QC_bmalayi_obj.gene.filt, features = c("nCount_RNA"), split.by = "worm_sample", group.by = "worm_sample", cols = fill, pt.size = 0)
 
+bmalayi_vlnplot_unique_gene_sample_no_pt
+bmalayi_vlnplot_umi_sample_no_pt
+
 ``` 
 
 ```{r violin plots sample 3}
 
-dir.create(paste0("qc_plots"))
+# Figure 1B plots
 
-ggsave(file = "qc_plots/bmalayi_violin_plot_umis_raw_ctrl_no_pt.pdf", plot = bmalayi_vlnplot_umi_sample_no_pt, dpi = 300)
-ggsave(file = "qc_plots/bmalayi_violin_plot_genes_raw_ctrl_no_pt.pdf", plot = bmalayi_vlnplot_unique_gene_sample_no_pt, dpi = 300)
+ggsave(file = "Figure_1B_umi.pdf", plot = bmalayi_vlnplot_umi_sample_no_pt, dpi = 300)
+ggsave(file = "Figure_1B_genes.pdf", plot = bmalayi_vlnplot_unique_gene_sample_no_pt, dpi = 300)
 
 ``` 
 
 ## Violin plots - per section
 
 ```{r violin plots section}
+
 unique(all_section_QC_bmalayi_obj.gene.filt@meta.data$sample_section)
 length(unique(all_section_QC_bmalayi_obj.gene.filt@meta.data$sample_section))
 section_levels <- c("BM1_1","BM1_2","BM1_3","BM1_4","BM1_5","BM1_6","BM1_7","BM1_8","BM1_9","BM2_1","BM2_2","BM2_3","BM2_4","BM2_5","BM2_6","BM2_7","BM2_8","BM2_9","BM2_10","BM2_11","BM3_1","BM3_2","BM3_3","BM3_4","BM3_7","BM3_8","BM3_9","BM3_10","BM3_11","BM3_12")
@@ -150,8 +140,9 @@ all_section_QC_bmalayi_obj.gene.filt@meta.data$sample_section <- factor(x = all_
 
 ```{r violin plots section 2}
 
-fill_3 <- c("#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2")
+# Figure 1C plots
 
+fill_3 <- c("#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#AEC7E8","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#009E73","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2","#0072B2")
 
 bmalayi_vlnplot_unique_gene_section_no_pt <- VlnPlot(all_section_QC_bmalayi_obj.gene.filt, features = c("nFeature_RNA"), split.by = "sample_section", group.by = "sample_section", cols = fill_3, pt.size = 0)
 bmalayi_vlnplot_umi_section_no_pt  <- VlnPlot(all_section_QC_bmalayi_obj.gene.filt, features = c("nCount_RNA"), split.by = "sample_section", group.by = "sample_section", cols = fill_3, pt.size = 0)
@@ -163,8 +154,10 @@ bmalayi_vlnplot_umi_section_no_pt
 
 ```{r violin plots section 3}
 
-ggsave(file = "qc_plots/bmalayi_violin_plot_umis_raw_ctr_sectionl_no_pt.pdf", plot = bmalayi_vlnplot_umi_section_no_pt, dpi = 300, height = 400, width = 600, units = "mm")
-ggsave(file = "qc_plots/bmalayi_violin_plot_genes_raw_ctrl_section_no_pt.pdf", plot = bmalayi_vlnplot_unique_gene_section_no_pt, dpi = 300, height = 400, width = 600, units = "mm")
+# Figure 1C plots
+
+ggsave(file = "Figure_1C_umi.pdf", plot = bmalayi_vlnplot_umi_section_no_pt, dpi = 300, height = 400, width = 600, units = "mm")
+ggsave(file = "Figure_1C_genes.pdf", plot = bmalayi_vlnplot_unique_gene_section_no_pt, dpi = 300, height = 400, width = 600, units = "mm")
 
 ``` 
 
@@ -172,41 +165,78 @@ ggsave(file = "qc_plots/bmalayi_violin_plot_genes_raw_ctrl_section_no_pt.pdf", p
 
 ```{r corr plots sample}
 
-
-umis.all.avg <- all_section_QC_bmalayi_obj.gene.filt@assays$RNA@counts
-sum.expr.all.avg <- lapply(unique(all_section_QC_bmalayi_obj.gene.filt$worm_sample), function(treat) {
-  umis_subset.all.avg <- umis.all.avg[, all_section_QC_bmalayi_obj.gene.filt$worm_sample %in% treat]  #subset counts dataframe
-  print(class(umis_subset.all.avg))
-  log1p(Matrix::rowMeans(umis_subset.all.avg)) #log1p(Matrix::rowMeans(umis_subset2))
+umis.all.avg.smpl <- all_section_QC_bmalayi_obj.gene.filt@assays$RNA@counts
+sum.expr.all.avg.smpl <- lapply(unique(all_section_QC_bmalayi_obj.gene.filt$worm_sample), function(treat) {
+  umis_subset.all.avg.smpl <- umis.all.avg.smpl[, all_section_QC_bmalayi_obj.gene.filt$worm_sample %in% treat]  #subset counts dataframe
+  print(class(umis_subset.all.avg.smpl))
+  log1p(Matrix::rowMeans(umis_subset.all.avg.smpl))
 })
 
-sum.expr.all.avg <- as.data.frame(sum.expr.all.avg)
-colnames(sum.expr.all.avg) <- unique(all_section_QC_bmalayi_obj.gene.filt$worm_sample)
-worm_sample_raw_unfil_df <- sum.expr.all.avg
+sum.expr.all.avg.smpl <- as.data.frame(sum.expr.all.avg.smpl)
+colnames(sum.expr.all.avg.smpl) <- unique(all_section_QC_bmalayi_obj.gene.filt$worm_sample)
+worm_sample_raw_unfil_df <- sum.expr.all.avg.smpl
 worm_sample_raw_unfil_df
 ```
 
 Control worm sample comparisons
 ```{r corr plots sample 2}
 
+# Figure 1D plots
 
-colnames(worm_sample_raw_unfil_df) <- c("BM1", "BM2","BM3")
 worm_sample_raw_unfil_df
 
 
-p1 <- ggplot(worm_sample_raw_unfil_df, aes(BM1, BM2)) + geom_point(alpha = 1,colour = "#009E73") + stat_cor(method = "pearson", label.x = 0, label.y = 3.7) + geom_smooth(method = "lm", fullrange=TRUE, color="#009E73", se = TRUE, level = 0.95)  + theme_minimal() + labs(title="Average gene expression between samples",
-       x="BM1 (log (1 + avg raw UMI counts per spot))", y = "BM2 (log (1 + avg raw UMI counts per spot))")#+ ggtitle("Blah") 
+p1 <- ggplot(worm_sample_raw_unfil_df, aes(BM1, BM2)) + 
+  geom_point(alpha = 1,colour = "#009E73") + stat_cor(method = "pearson", label.x = 0, label.y = 3.7, p.accuracy = 1e-323) + 
+  geom_smooth(method = "lm", fullrange=TRUE, color="#009E73", se = TRUE, level = 0.95)  + 
+  theme_minimal() + 
+  labs(title="Average gene expression between samples", 
+       x="BM1 (log (1 + avg raw UMI counts per spot))", y = "BM2 (log (1 + avg raw UMI counts per spot))") +
+  theme(axis.text.y = element_text(hjust = 1, color = "black"),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "black"),
+        axis.line = element_line(color = "black"),
+        plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank(),  # Remove panel background
+        axis.ticks.length = unit(0.25, "cm"),  # Adjust the length of the tick marks if needed
+        axis.text.x = element_text(color = "black"))
 
-p2 <- ggplot(worm_sample_raw_unfil_df, aes(BM1, BM3)) + geom_point(colour = "#009E73",alpha = 1) + stat_cor(method = "pearson", label.x = 0, label.y = 3.7) + geom_smooth(method = "lm", fullrange=TRUE, color="#009E73", se = TRUE, level = 0.95) + theme_minimal() + labs(title="Average gene expression between samples",
-       x="BM1 (log (1 + avg raw UMI counts per spot))", y = "BM3 (log (1 + avg raw UMI counts per spot))")
+p2 <- ggplot(worm_sample_raw_unfil_df, aes(BM1, BM3)) + 
+  geom_point(colour = "#009E73",alpha = 1) + 
+  stat_cor(method = "pearson", label.x = 0, label.y = 3.7, p.accuracy = 1e-323) + 
+  geom_smooth(method = "lm", fullrange=TRUE, color="#009E73", se = TRUE, level = 0.95) + 
+  theme_minimal() + 
+  labs(title="Average gene expression between samples", 
+       x="BM1 (log (1 + avg raw UMI counts per spot))", y = "BM3 (log (1 + avg raw UMI counts per spot))") +
+  theme(axis.text.y = element_text(hjust = 1, color = "black"),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "black"),
+        axis.line = element_line(color = "black"),
+        plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank(),  # Remove panel background
+        axis.ticks.length = unit(0.25, "cm"),  # Adjust the length of the tick marks if needed
+        axis.text.x = element_text(color = "black"))
 
-p3 <- ggplot(worm_sample_raw_unfil_df, aes(BM2, BM3)) + geom_point(colour = "#009E73",alpha = 1) + stat_cor(method = "pearson", label.x = 0, label.y = 3.7) + geom_smooth(method = "lm", fullrange=TRUE, color="#009E73", se = TRUE, level = 0.95) + theme_minimal() + labs(title="Average gene expression between samples",
-       x="BM2 (log (1 + avg raw UMI counts per spot))", y = "BM3 (log (1 + avg raw UMI counts per spot))")
+p3 <- ggplot(worm_sample_raw_unfil_df, aes(BM2, BM3)) + 
+  geom_point(colour = "#009E73",alpha = 1) + 
+  stat_cor(method = "pearson", label.x = 0, label.y = 3.7, p.accuracy = 1e-323) + 
+  geom_smooth(method = "lm", fullrange=TRUE, color="#009E73", se = TRUE, level = 0.95) + 
+  theme_minimal() + 
+  labs(title="Average gene expression between samples",
+       x="BM2 (log (1 + avg raw UMI counts per spot))", y = "BM3 (log (1 + avg raw UMI counts per spot))") +
+  theme(axis.text.y = element_text(hjust = 1, color = "black"),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "black"),
+        axis.line = element_line(color = "black"),
+        plot.title = element_text(hjust = 0.5),
+        panel.background = element_blank(),  # Remove panel background
+        axis.ticks.length = unit(0.25, "cm"),  # Adjust the length of the tick marks if needed
+        axis.text.x = element_text(color = "black"))
 
 
-ggsave(file = "qc_plots/bmalayi_corr_worm_raw_unfilt_1_2.pdf", plot = p1, dpi = 300)
-ggsave(file = "qc_plots/bmalayi_corr_worm_raw_unfilt_1_3.pdf", plot = p2, dpi = 300)
-ggsave(file = "qc_plots/bmalayi_corr_worm_raw_unfilt_2_3.pdf", plot = p3, dpi = 300)
+ggsave(file = "Figure_1D_BM1_BM2.pdf", plot = p1, dpi = 300)
+ggsave(file = "Figure_1D_BM1_BM3.pdf", plot = p2, dpi = 300)
+ggsave(file = "Figure_1D_BM2_BM3.pdf", plot = p3, dpi = 300)
 
 
 ``` 
@@ -216,33 +246,34 @@ ggsave(file = "qc_plots/bmalayi_corr_worm_raw_unfilt_2_3.pdf", plot = p3, dpi = 
 ```{r corr plots section}
 
 
-umis.all.avg <- all_section_QC_bmalayi_obj.gene.filt@assays$RNA@counts
-sum.expr.all.avg <- lapply(unique(all_section_QC_bmalayi_obj.gene.filt$sample_section), function(treat) {
-  umis_subset.all.avg <- umis.all.avg[, all_section_QC_bmalayi_obj.gene.filt$sample_section %in% treat]  #subset counts dataframe
-  print(class(umis_subset.all.avg))
-  log1p(Matrix::rowMeans(umis_subset.all.avg))
+umis.all.avg.sect <- all_section_QC_bmalayi_obj.gene.filt@assays$RNA@counts
+sum.expr.all.avg.sect <- lapply(unique(all_section_QC_bmalayi_obj.gene.filt$sample_section), function(treat) {
+  umis_subset.all.avg.sect <- umis.all.avg.sect[, all_section_QC_bmalayi_obj.gene.filt$sample_section %in% treat]  #subset counts dataframe
+  print(class(umis_subset.all.avg.sect))
+  log1p(Matrix::rowMeans(umis_subset.all.avg.sect))
 })
 
-sum.expr.all.avg <- as.data.frame(sum.expr.all.avg)
-colnames(sum.expr.all.avg) <- unique(all_section_QC_bmalayi_obj.gene.filt$sample_section)
-worm_sample_raw_unfil_df <- sum.expr.all.avg
-worm_sample_raw_unfil_df
+sum.expr.all.avg.sect <- as.data.frame(sum.expr.all.avg.sect)
+colnames(sum.expr.all.avg.sect) <- unique(all_section_QC_bmalayi_obj.gene.filt$sample_section)
+worm_section_raw_unfil_df <- sum.expr.all.avg.sect
+worm_section_raw_unfil_df
 ```
 
 Control worm section comparisons - all worms
 ```{r corr plots section 2}
 
+# Figure 1D section plots
+
 dir.create(paste0("qc_plots/sections"))
 
-colnames(worm_sample_raw_unfil_df) <- c("BM1_1","BM1_2","BM1_3","BM1_4","BM1_5","BM1_6","BM1_7","BM1_8","BM1_9","BM2_1","BM2_2","BM2_3","BM2_4","BM2_5","BM2_6","BM2_7","BM2_8","BM2_9","BM2_10","BM2_11","BM3_1","BM3_2","BM3_3","BM3_4","BM3_7","BM3_8","BM3_9","BM3_10","BM3_11","BM3_12")
-worm_sample_raw_unfil_df
+worm_section_raw_unfil_df
 
-for (i in colnames(worm_sample_raw_unfil_df)) {
+for (i in colnames(worm_section_raw_unfil_df)) {
   first_section <- i
   first_section <- noquote(first_section)
   print(first_section)
 
-  for (j in colnames(worm_sample_raw_unfil_df)){ 
+  for (j in colnames(worm_section_raw_unfil_df)){ 
     
     second_section <- noquote(j)
     print(second_section)
@@ -250,9 +281,22 @@ for (i in colnames(worm_sample_raw_unfil_df)) {
     p <- aes_(as.name(first_section), as.name(second_section))
     print(p)
     
-    p <- ggplot(worm_sample_raw_unfil_df, aes_(as.name(first_section),as.name(second_section))) + geom_point(alpha = 1,colour = "#009E73") + stat_cor(method = "pearson", label.x = 0, label.y = 3.7) + geom_smooth(method = "lm", fullrange=TRUE, color="#009E73", se = TRUE, level = 0.95)  + theme_minimal() + labs(title="Average gene expression between sections",           x=paste0(first_section, " (log (1 + avg raw UMI counts per spot))"), y = paste0(second_section, " (log (1 + avg raw UMI counts per spot))"))
+    p <- ggplot(worm_section_raw_unfil_df, aes_(as.name(first_section),as.name(second_section))) + 
+      geom_point(alpha = 1,colour = "#009E73") + stat_cor(method = "pearson", label.x = 0, label.y = 3.7, p.accuracy = 1e-323) + 
+      geom_smooth(method = "lm", fullrange=TRUE, color="#009E73", se = TRUE, level = 0.95)  + 
+      theme_minimal() + 
+      labs(title="Average gene expression between sections", 
+           x=paste0(first_section, " (log (1 + avg raw UMI counts per spot))"), y = paste0(second_section, " (log (1 + avg raw UMI counts per spot))")) +
+      theme(axis.text.y = element_text(hjust = 1, color = "black"),
+            panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            axis.ticks = element_line(color = "black"),
+            axis.line = element_line(color = "black"),
+            plot.title = element_text(hjust = 0.5),
+            panel.background = element_blank(),  # Remove panel background
+            axis.ticks.length = unit(0.25, "cm"),  # Adjust the length of the tick marks if needed
+            axis.text.x = element_text(color = "black"))
 
-    ggsave(file = paste0("qc_plots/sections/bmalayi_corr_worm_raw_unfilt_", first_section, "_", second_section, ".pdf"), plot = p, dpi = 300)
+    ggsave(file = paste0("qc_plots/sections/Figure_1D_", first_section, "_", second_section, ".pdf"), plot = p, dpi = 300)
   }
 }
 
@@ -446,4 +490,16 @@ saveRDS(all_section_QC_wBm_obj.brugia.filt.spots.gene.filt, file = "wBm.filt.rds
 
 ```
 
-Outputs are the violin plots and correlation plots shown in Figure 1 of the main manuscript, the filtered brugia count matrix and metadata rds object used in the next script, 5_normalization.Rmd, and the Wolbachia (wBm) filtered count matrix and metadata rds object.
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+end_time <- Sys.time()
+end_time
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+elapsed_time <- round((end_time-start_time), 3)
+elapsed_time
+```
+
+Outputs are the violin plots in Figure 1B-C and correlation plots shown in Figure 1D of the main manuscript, the filtered brugia count matrix and metadata rds object used in the next script, 5_normalization.Rmd, and the Wolbachia (wBm) filtered count matrix and metadata rds object.

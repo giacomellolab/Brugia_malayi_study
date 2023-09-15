@@ -5,35 +5,24 @@ date: "8/16/2022"
 output: html_document
 ---
 
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+start_time <- Sys.time()
+start_time
+```
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
 ```
 
 ```{r load packages}
   library(STutility)
-  library(hdf5r)
-  library(imager)
-  library(akima)
-  library(plotly)
-  library(raster)
-  library(dplyr)
-  library(magrittr)
-  library(ggplot2)
-  library(imager) 
-  library(magrittr)
-  library(RColorBrewer)
-  library(stringr)
-  library(openxlsx)
-  library(hash)
-  library(readxl)
-  library(purrr)
-  library(harmony)
-  library(DESeq2)
 ```
 
 ```{r set working directory}
 
-setwd("<path to working directory where count matrices for all samples reside>")
+#setwd("<path to working directory where count matrices for all samples reside>")
+setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/")
 ``` 
 
 ## Read in Filtered Seurat Objects
@@ -102,4 +91,16 @@ saveRDS(bmalay_filt_obj.list.nfeat.merged, file = "bmalay_filt_obj.list.nfeat.me
 
 ```
 
-The outputs are the integration features from SelectIntegrationFeatures, output of PrepSCTIntegration, and the normalized rds object of brugia count matrix and metadata. The integration features and normalized rds object of brugia count matrix and metadata are used in the next scripts, 6_clustering_analysis.Rmd, 7_co_localization_analysis.Rmd, and in the 3d_model_project.zip.
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+end_time <- Sys.time()
+end_time
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+elapsed_time <- round((end_time-start_time), 3)
+elapsed_time
+```
+
+The outputs are the integration features from SelectIntegrationFeatures, output of PrepSCTIntegration, and the normalized rds object of brugia count matrix and metadata. The integration features and normalized rds object of brugia count matrix and metadata are used in the next scripts, 6_clustering_analysis.Rmd, 7_co_localization_analysis.Rmd, and in the 3d_model_project.zip for making the 3D model plots show in Figure 2A, Figure 3B-F, Figure 4B-D, and Figure 5C-D.

@@ -1,0 +1,364 @@
+---
+title: "7_genes_on_tissue_visualization_treated_worms"
+author: "Hailey Sounart"
+date: "5/21/2021"
+output: html_document
+---
+
+
+````{r, include = TRUE, echo = TRUE, message = TRUE}
+
+start_time <- Sys.time()
+start_time
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
+```
+
+```{r load packages}
+  library(STutility)
+  library(magrittr)
+  library(ggplot2)
+  library(magick)
+  library(grid)
+```
+
+```{r set working directory}
+
+#setwd("<path to working directory>")
+setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/r_scripts_treated_worms")
+``` 
+
+
+# Read in Normalized object
+
+``` {r read norm object}
+
+bmalay.treated_norm_obj <- readRDS("bmalay.treated.normalized.obj.rds")
+bmalay.treated_norm_obj 
+
+```
+
+# Add wolbachia metadata to brugia object
+
+```{r wol labels}
+
+bmalay.treated_norm_obj@meta.data$wolbachia <- ifelse((bmalay.treated_norm_obj@meta.data$counts.wBm >= 1), 1, 0)
+bmalay.treated_norm_obj@meta.data
+
+```
+
+# Only for doxy worms
+
+## Split into control and doxy
+
+``` {r split objs}
+
+length(bmalay.treated_norm_obj@meta.data$condition[(bmalay.treated_norm_obj@meta.data$condition == "control")])
+length(bmalay.treated_norm_obj@meta.data$condition[(bmalay.treated_norm_obj@meta.data$condition == "doxycycline")])
+```
+
+``` {r split objs 2}
+
+ctrl_spots <- SubsetSTData(bmalay.treated_norm_obj, expression = condition == "control")
+ctrl_spots
+doxy_spots <- SubsetSTData(bmalay.treated_norm_obj, expression = condition == "doxycycline")
+doxy_spots
+```
+
+## Load raw image
+```{r load raw image}
+
+# Path to the raw HE images used as input for spaceranger
+
+high_res_image_list <- c("/Users/hailey.sounart/Documents/brugia_malayi/old_analysis/all_sections_analysis//high_res_images/210304_V10T03_275_Worms_HE_HS-Spot000001_25perc.jpg",
+                                "/Users/hailey.sounart/Documents/brugia_malayi/old_analysis/all_sections_analysis//high_res_images/210304_V10T03_275_Worms_HE_HS-Spot000001_25perc.jpg",
+                                "/Users/hailey.sounart/Documents/brugia_malayi/old_analysis/all_sections_analysis//high_res_images/210304_V10T03_275_Worms_HE_HS-Spot000001_25perc.jpg",
+                                "/Users/hailey.sounart/Documents/brugia_malayi/old_analysis/all_sections_analysis//high_res_images/210304_V10T03_275_Worms_HE_HS-Spot000001_25perc.jpg",
+                                "/Users/hailey.sounart/Documents/brugia_malayi/old_analysis/all_sections_analysis//high_res_images/210208_worm_bmalayi_V10T03_300_HE_HS_B1-Spot000001_25perc.jpg")
+
+```
+
+## Load the images
+
+```{r load images raw,unfilt, fig.width = 10, fig.height = 10}
+
+bmalayi_obj <- LoadImages(doxy_spots, 
+                                         time.resolve = F, 
+                                         verbose = T)
+
+``` 
+
+## Get image pixels
+```{r get image pixels}
+
+# Now we need the pixel coordinates to make it possible to draw points on the capture area
+# Most image related info is stored in the "Staffli" object which can be accessed using the
+# GetStaffli function
+
+bmalayi_obj.object <- GetStaffli(bmalayi_obj)
+bmalayi_obj.object
+
+bmalayi_obj.object@dims[[1]]$width
+bmalayi_obj.object@dims[[1]]$height
+
+```
+
+## Set Resolution
+
+```{r set resolution}
+
+# Now we can load the original HE image in whatever resolution we like
+# Here: width of 5000 pixels with a fixed aspect ratio
+# et a size that is smaller than the original image.
+
+imwidth <- 5000
+section <- c(1:5)
+
+```
+
+## Get Image Info
+
+```{r get image info}
+
+# Let's load the image and retrieve some info about it. It will take some time if the image was
+# exported in full resolution from the microscope, do NOT plot this image.
+
+im_list <- lapply(1:length(high_res_image_list), function(i) {image_read(high_res_image_list[[i]])})
+im_list
+
+```
+
+## Scale Down Image
+
+```{r scale down image }
+
+# An image of 5000 pixels in width is still pretty big to draw in the RStudio Viewer
+# so avoid this. Now we can scale down the original image to our
+# predefined imwidth and convert it to raster format.
+
+im_list <- lapply(1:length(im_list), function(i) {image_scale(im_list[[i]], paste0(imwidth)) %>% as.raster()})
+
+lapply(1:length(im_list), function(i) {
+  print(class(im_list[[i]]))
+  print(dim(im_list[[i]]))})
+
+```
+
+## Scale Pixel Coordinates
+
+```{r scale pixel coordinates}
+
+# Next, we need to scale our pixel coordinates to fit our new image. The pixel coordinates
+# are stored in the st.object meta.data slot. If multiple samples present here,
+# first subset this meta.data to include the section of interest.
+
+gg_list <- lapply(1:length(im_list), function(i) {subset(bmalayi_obj.object@meta.data, sample %in% paste0(section[i]))[, c("pixel_x", "pixel_y")]}) 
+gg_list
+
+```
+
+## Get Scaling Factor
+
+```{r get scaling factor}
+
+# We can get the scaling factor by dividing the width of our new image by the
+# width of our images that were used when running InputFromTable, i.e. the
+# "tissue_hires_image.png".
+
+bmalayi_obj.object@dims[[1]]$width
+
+scale.factor_list <- lapply(1:length(im_list), function(i) {dim(im_list[[i]])[2]/bmalayi_obj.object@dims[[1]]$width})
+
+scale.factor_list
+
+```
+
+## Get New Coordinates
+
+```{r get new coordinates}
+
+# Then we multiply our pixel coordinates by this scale.factor to get our new coordinates
+ 
+gg_list <- Map('*',gg_list,scale.factor_list)
+gg_list 
+
+```
+
+
+# colocal expression images
+
+## binary image
+
+### Add Feature Values
+
+```{r add features values}
+
+# The next thing you need to do is to add the feature values you want to draw.
+# We can use the FetchData function which collects
+# values from different slots
+
+ftrs <- c("wolbachia")
+
+data_list <- lapply(1:length(gg_list), function(i) {FetchData(object = bmalayi_obj, vars = ftrs, cells = rownames(subset(bmalayi_obj.object@meta.data, sample %in% paste0(section[i]))))})
+
+data_list
+
+gg_list <- Map(cbind , gg_list, data_list)
+
+gg_list 
+
+```
+
+```{r ggplot wol binary}
+
+# Figure 6F
+
+selected.feature <- "wolbachia"
+g <- lapply(1:length(section), function(i) grid::rasterGrob(im_list[[i]], width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE))
+
+for(i in seq_along(gg_list)) {
+  g_sub = g[[i]]
+  
+  p <- ggplot() +
+  annotation_custom(g_sub, -Inf, Inf, -Inf, Inf) +
+  geom_point(data = gg_list[[i]], aes_string("pixel_x", "dim(im_list[[i]])[1] - pixel_y", color = as.factor(gg_list[[i]]$wolbachia)), size = 8) +
+  scale_x_continuous(limits = c(0, dim(im_list[[i]])[2]), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, dim(im_list[[i]])[1]), expand = c(0, 0)) +
+  theme_void() +
+  scale_color_manual(values = c("seagreen2","tan1")) +
+  theme(legend.position = c(0.89, 0.85), legend.key.height = unit(x = 1.2, units = "cm"),
+        legend.key.width = unit(x = 1.2, units = "cm"),
+        legend.text = element_text(size = 20),
+        legend.title = element_text(size = 20))
+    theme_void() 
+  
+  pdf(file = paste0("Figure_6F_binary_colocal_", unique(bmalayi_obj$sample_section)[i] ,".pdf"), width = 33.336, height = 32.28) #, res = 300
+print(p)
+dev.off()
+}
+
+```
+
+## Genes on tissue
+
+## Add Feature Values
+
+``` {r genes of interest}
+
+#"bmalayi-WBGene00233912" = "Bma-ubq-2"
+#"bmalayi-WBGene00220387" = "Bm126"
+
+genes_for_spatial <- c("bmalayi-WBGene00220387","bmalayi-WBGene00233912")
+
+```
+
+
+```{r add features values}
+
+# The next thing you need to do is to add the feature values you want to draw.
+# Let's select a couple of different ones. We can use the FetchData function which collects
+# values from different slots, here from the "meta.data", "assays$SCT@data" and "reductions@UMAP@cell.embeddings" slots
+
+
+ftrs <- genes_for_spatial
+ftrs.edited <- gsub("-", ".", ftrs)
+
+data_list <- lapply(1:length(gg_list), function(i) {FetchData(object = bmalayi_obj, vars = ftrs, cells = rownames(subset(bmalayi_obj.object@meta.data, sample %in% paste0(section[i]))))}) 
+
+data_list
+
+gg_list <- Map(cbind , gg_list, data_list)
+
+gg_list 
+
+```
+
+```{r ggplot wol neg}
+
+# Figure 6F
+
+for (feat in ftrs.edited) {
+  selected.feature <- feat
+  folder.name <- gsub("bmalayi.", "bmalayi-", feat)
+  
+  g <- lapply(1:length(section), function(i) grid::rasterGrob(im_list[[i]], width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE))
+  
+  for(i in seq_along(gg_list)) {
+    g_sub = g[[i]]
+    df = as.data.frame(gg_list[i])
+    df_no_wol <- df[(df$wolbachia == "0"),]
+    
+    p <- ggplot() +
+    annotation_custom(g_sub, -Inf, Inf, -Inf, Inf) +
+    geom_point(data = df_no_wol, aes_string("pixel_x", "dim(im_list[[i]])[1] - pixel_y", color = selected.feature), size = 8) +
+    scale_x_continuous(limits = c(0, dim(im_list[[i]])[2]), expand = c(0, 0)) +
+    scale_y_continuous(limits = c(0, dim(im_list[[i]])[1]), expand = c(0, 0)) +
+    theme_void() +
+    scale_color_gradientn(colors = c("navyblue", "cyan", "yellow", "red", "dark red"), limits = c(0, max(abs(df[, selected.feature])))) +
+    theme(legend.position = c(0.89, 0.85), legend.key.height = unit(x = 1.2, units = "cm"),
+          legend.key.width = unit(x = 1.2, units = "cm"),
+          legend.text = element_text(size = 20),
+          legend.title = element_text(size = 20))
+      theme_void() 
+
+    pdf(file = paste0("Figure_6F_", folder.name, "_", unique(bmalayi_obj$sample_section)[i],"_", "no_wol_0",".pdf"), width = 33.336, height = 32.28)
+  print(p)
+  dev.off()
+  }
+}
+
+
+```
+
+
+```{r ggplot wol pos}
+
+# Figure 6F
+
+for (feat in ftrs.edited) {
+  selected.feature <- feat
+  folder.name <- gsub("bmalayi.", "bmalayi-", feat)
+  
+  g <- lapply(1:length(section), function(i) grid::rasterGrob(im_list[[i]], width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE))
+  
+  for(i in seq_along(gg_list)) {
+    g_sub = g[[i]]
+    df = as.data.frame(gg_list[i])
+    df_wol <- df[(df$wolbachia == "1"),]
+    
+    p <- ggplot() +
+    annotation_custom(g_sub, -Inf, Inf, -Inf, Inf) +
+    geom_point(data = df_wol, aes_string("pixel_x", "dim(im_list[[i]])[1] - pixel_y", color = selected.feature), size = 8) +
+    scale_x_continuous(limits = c(0, dim(im_list[[i]])[2]), expand = c(0, 0)) +
+    scale_y_continuous(limits = c(0, dim(im_list[[i]])[1]), expand = c(0, 0)) +
+    theme_void() +
+    scale_color_gradientn(colors = c("navyblue", "cyan", "yellow", "red", "dark red"), limits = c(0, max(abs(df[, selected.feature])))) +
+    theme(legend.position = c(0.89, 0.85), legend.key.height = unit(x = 1.2, units = "cm"),
+          legend.key.width = unit(x = 1.2, units = "cm"),
+          legend.text = element_text(size = 20),
+          legend.title = element_text(size = 20))
+      theme_void() 
+
+    pdf(file = paste0("Figure_6F_", folder.name, "_", unique(bmalayi_obj$sample_section)[i],"_", "wol_1",".pdf"), width = 33.336, height = 32.28) #, res = 300
+  print(p)
+  dev.off()
+  }
+}
+
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+end_time <- Sys.time()
+end_time
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+elapsed_time <- round((end_time-start_time), 3)
+elapsed_time
+```
+
+Output is the genes on tissue plots used in Figure 6F.

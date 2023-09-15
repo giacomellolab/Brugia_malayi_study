@@ -5,42 +5,27 @@ date: "8/16/2022"
 output: html_document
 ---
 
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+start_time <- Sys.time()
+start_time
+```
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
 ```
 
 ```{r load packages}
   library(STutility)
-  library(hdf5r)
-  library(imager)
-  library(akima)
-  library(plotly)
-  library(raster)
-  library(dplyr)
-  library(magrittr)
   library(ggplot2)
-  library(imager) 
-  library(magrittr)
-  library(RColorBrewer)
-  library(stringr)
   library(openxlsx)
-  library(hash)
-  library(readxl)
-  library(purrr)
-  library(harmony)
-  library(DESeq2)
-  library(performance)
-  library(Hmisc)
-  library(corrplot)
-  library(pheatmap)
-  library(performance)
-  library(cowplot)
-  library(ggpubr)
+  library(EnhancedVolcano)
 ```
 
 ```{r set working directory}
 
-setwd("<path to working directory where count matrices for all samples reside>")
+#setwd("<path to working directory where count matrices for all samples reside>")
+setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/")
 ``` 
 
 ## Load normalized object
@@ -161,13 +146,104 @@ brugia_wBm_de_genes_wilcox_deseq2_p0.05_fc0.1_comb_renamed_annot
 
 
 ``` 
-
-## Save the DE gene lists
+## Save the DE gene lists (Supplementary Data 5)
 ```{r save colocal de genes}
 
-saveRDS(brugia_wBm_de_genes_wilcox_deseq2_p0.05_fc0.1_comb_renamed_annot, file = "brugia_colocal_wilcox_deseq2_p0.05_fc0.1_de_genes.rds")
-write.xlsx(brugia_wBm_de_genes_wilcox_deseq2_p0.05_fc0.1_comb_renamed_annot, file = "brugia_colocal_wilcox_deseq2_p0.05_fc0.1_de_genes.xlsx", col.names=TRUE, row.names=TRUE)
+#Supplementary Data 5
+saveRDS(brugia_wBm_de_genes_wilcox_deseq2_p0.05_fc0.1_comb_renamed_annot, file = "Supplementary_Data_5.rds")
+write.xlsx(brugia_wBm_de_genes_wilcox_deseq2_p0.05_fc0.1_comb_renamed_annot, file = "Supplementary_Data_5.xlsx", col.names=TRUE, row.names=TRUE)
 
 ``` 
 
-Output is the deferentially expressed brugia genes in Wolbachia+ verus Wolbachia- spots in an excel file and as an rds object, and is shown in Supplementary Table 6. The output is used to generate the plots for Figure 5A-D. 
+## Plots (Figure 5A-B)
+
+### Figure 5A
+
+``` {r load clustered object}
+
+brugia_clu_obj <- readRDS("bmalayi_clusters.rds")
+brugia_clu_obj
+
+```
+
+```{r rename clus numbers}
+
+#rename clusters
+
+new_clus_names <- brugia_clu_obj
+new_clus_names$seurat_clusters <- factor(brugia_clu_obj$seurat_clusters, 
+         levels = c("0", "1", "2", "3"), 
+         labels = c("1", "2", "3", "4"))
+
+new_clus_names@meta.data
+```
+```{r make wBm metadata}
+
+#add wolbachia column to metadata
+new_clus_names@meta.data$wolbachia <- ifelse((new_clus_names@meta.data$counts.wBm >= 1), 1, 0)
+new_clus_names@meta.data
+
+```
+
+```{r plot colocal umap}
+
+#Figure 5A
+
+wol_plot <- DimPlot(new_clus_names, label = FALSE, cols = c("#00FF7F","#FA8072"), pt.size = 5, group.by = "wolbachia", reduction = "umap")
+wol_plot
+
+ggsave(file = paste0("Figure_5A.pdf"), plot = wol_plot, width = 15, height =10, dpi = 300)
+```
+### Figure 5B
+
+```{r get colocal de genes}
+
+colocal_de_genes <- FindMarkers(brugia_norm_obj, assay = "SCT", ident.1 = 1, ident.2 = 0, group.by = "wolbachia", logfc.threshold = 0, min.cells.feature = 0, min.cells.group = 0, min.pct = 0)
+```
+
+```{r filt de genes}
+
+#get top genes by fold change and significance 
+
+sig_up_colocal_de_genes <- rownames(colocal_de_genes[(colocal_de_genes$p_val_adj < 0.05 & colocal_de_genes$avg_logFC > 0.4),])
+#sig_up_colocal_de_genes
+sig_down_colocal_de_genes <- rownames(colocal_de_genes[(colocal_de_genes$p_val_adj < 0.05 & colocal_de_genes$avg_logFC < -0.4),])
+#sig_down_colocal_de_genes
+
+sig_up_down_colocal_de_genes <- c(sig_up_colocal_de_genes, sig_down_colocal_de_genes)
+#sig_up_down_colocal_de_genes
+
+sig_up_down_colocal_de_genes_plus_text_genes <- c(sig_up_down_colocal_de_genes, "bmalayi-WBGene00224389", "bmalayi-WBGene00222232")
+#sig_up_down_colocal_de_genes_plus_text_genes
+```
+
+
+```{r plot volcano plot}
+
+#Figure 5B
+
+coloca_volcano <- EnhancedVolcano(colocal_de_genes, rownames(colocal_de_genes), "avg_logFC", "p_val_adj", FCcutoff = 0, pCutoff = 0.05, labSize = 1.5, pointSize = 2, col = c("grey75", "grey75", "grey75", "#EE8262"), drawConnectors = TRUE, widthConnectors = 0.1, typeConnectors = "closed", endsConnectors = "first", lengthConnectors = unit(0.000001, "npc"), colConnectors = "grey10", selectLab = sig_up_down_colocal_de_genes_plus_text_genes, colAlpha = 1, labCol = "black", gridlines.minor = FALSE, gridlines.major = FALSE, xlim = c(min(colocal_de_genes[["avg_logFC"]], na.rm = TRUE) - 0.25, max(colocal_de_genes[["avg_logFC"]], na.rm = TRUE) + 0.25)) + xlab("Average log fold change")
+coloca_volcano
+
+
+coloca_volcano_2 <- EnhancedVolcano(colocal_de_genes, rownames(colocal_de_genes), "avg_logFC", "p_val_adj", FCcutoff = 0, pCutoff = 0.05, labSize = 1.5, pointSize = 2, col = c("grey75", "grey75", "grey75", "#008B45"), drawConnectors = TRUE, widthConnectors = 0.1, typeConnectors = "closed", endsConnectors = "first", lengthConnectors = unit(0.000001, "npc"), colConnectors = "grey10", selectLab = sig_up_down_colocal_de_genes_plus_text_genes, colAlpha = 1, labCol = "black", gridlines.minor = FALSE, gridlines.major = FALSE, xlim = c(min(colocal_de_genes[["avg_logFC"]], na.rm = TRUE) - 0.25, max(colocal_de_genes[["avg_logFC"]], na.rm = TRUE) + 0.25)) + xlab("Average log fold change")
+coloca_volcano_2
+
+ggsave(file = paste0("Figure_5B_1.pdf"), plot = coloca_volcano, dpi = 300, width = 10, height =8)
+ggsave(file = paste0("Figure_5B_2.pdf"), plot = coloca_volcano_2, dpi = 300, width = 10, height =8)
+
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+end_time <- Sys.time()
+end_time
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+elapsed_time <- round((end_time-start_time), 3)
+elapsed_time
+```
+
+Output is the deferentially expressed brugia genes in Wolbachia+ verus Wolbachia- spots in an excel file and as an rds object, and is shown in Supplementary Data 5. The output plots are used in Figures 5A-B. 

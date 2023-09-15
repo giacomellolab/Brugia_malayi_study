@@ -1,0 +1,482 @@
+---
+title: "wolbachia_density_correlation_analysis"
+author: "Hailey Sounart"
+date: "9/1/2023"
+output: html_document
+---
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+start_time <- Sys.time()
+start_time
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FALSE)
+```
+
+```{r}
+library(Mfuzz)
+library(openxlsx)
+library(topGO)
+library(ggplot2)
+library(biomaRt)
+library(cowplot)
+```
+
+```{r set working directory}
+
+#setwd("<path to working directory where count matrices for all samples reside>")
+
+``` 
+
+# Read in Wolbachia abundance data frame
+```{r}
+
+wol_abund_df <- readRDS(file = "/Users/hailey.sounart/Documents/brugia_malayi/220815_final_code/230214_repeat_with_new_section_names/wol_abund_group_avg_df.rds")
+
+```
+
+# Make ExpressionSet object
+```{r}
+
+eset <- new('ExpressionSet', exprs=(as.matrix(wol_abund_df)))
+
+```
+
+# Check for missing values
+```{r}
+
+eset.r <- filter.NA(eset, thres=0.25)
+eset.f <-fill.NA(eset.r,mode="knnw")
+
+```
+
+# Filtering
+```{r}
+
+#This function is to exclude genes with low standard deviation.
+#min.std=0 means filtering out genes that have no variation across the Wolbachia abundance groups, i.e., genes that have a constant expression profile. A standard deviation of 0 indicates that all the expression values for that gene are the same across all Wolbachia abundance groups.
+
+eset.filt <- filter.std(eset.f,min.std=0)
+
+```
+
+# Standardization
+```{r}
+
+eset.s <- standardise(eset.filt)
+
+```
+
+# Test for m (fuzzifier) value
+```{r}
+
+m.s <- mestimate(eset.s)
+m.s
+
+```
+
+# Check for cluster numbers
+
+```{r}
+
+Dmin(eset.s,m.s ,crange=seq(3,20,1),repeats=3,visu=TRUE)
+
+```
+Dmin declines slower after 6, will try 3-6 clusters.
+
+# Soft clustering
+```{r}
+set.seed(45)
+
+clu_4 <- mfuzz(eset.s, c=4, m=m.s)
+
+```
+
+# View clusters
+```{r}
+set.seed(45)
+
+group_names <- colnames(exprs(eset.s))
+mfuzz.plot(eset.s,cl=clu_4,time.labels=group_names, new.window=FALSE, mfrow=c(2,2))
+```
+# Core cluster genes
+```{r}
+
+clu_genes <- acore(eset.s,cl=clu_4,min.acore=0.7)
+clu_genes
+
+```
+
+# BioMart
+
+```{r}
+
+bmalayi_exp_norm_genes <- read.xlsx("bmalayi_exp_norm_genes.xlsx", colNames = FALSE)
+bmalayi_exp_norm_genes_list <- bmalayi_exp_norm_genes$X1
+#length(bmalayi_exp_norm_genes_list)
+#head(bmalayi_exp_norm_genes_list)
+
+```
+
+
+```{r}
+mart <- useMart("parasite_mart", dataset = "wbps_gene", host = "https://parasite.wormbase.org", port = 443)
+
+```
+
+```{r}
+listDatasets(mart)
+```
+
+```{r}
+
+all_gene_GO <- getBM(mart = mart, 
+                     filters = c("species_id_1010", "wbps_gene_id"),
+                     value = list("brmalaprjna10729", bmalayi_exp_norm_genes_list),
+                     attributes = c("production_name_1010", "wbps_gene_id", "display_name_1010", "species_id_key", "taxonomy_id_1010", "assembly_accession_1010", "nematode_clade_1010" ,"wbps_transcript_id","wbps_peptide_id", "external_gene_id", "external_gene_db", "description", "gene_biotype", "external_transcript_id", "transcript_db_name", "transcript_biotype", "entrezgene_id", "entrezgene_name", "wormbase_gene", "wormbase_transcript", "go_accession", "go_name_1006", "go_definition_1006", "go_linkage_type", "go_namespace_1003"))
+
+```
+
+# GO term enrichment analysis
+
+## Get all experiment genes (background genes)
+
+```{r}
+
+#all exp genes
+
+# Create a list where each gene is associated with its GO terms
+gene2GO <- split(all_gene_GO$go_accession, all_gene_GO$wbps_gene_id)
+
+gene2GO <- gene2GO[sapply(gene2GO, length) > 0]
+
+# All genes in the background (assuming all genes in df are the background)
+allGenes <- unique(all_gene_GO$wbps_gene_id)
+```
+
+## cluster genes
+```{r}
+
+# cluster 1
+selectedGenes_clu_1 <- rownames(clu_genes[[1]])
+selectedGenes_clu_1 <- gsub("bmalayi-", "",selectedGenes_clu_1)
+
+# cluster 2
+selectedGenes_clu_2 <- rownames(clu_genes[[2]])
+selectedGenes_clu_2 <- gsub("bmalayi-", "",selectedGenes_clu_2)
+
+# cluster 3
+selectedGenes_clu_3 <- rownames(clu_genes[[3]])
+selectedGenes_clu_3 <- gsub("bmalayi-", "",selectedGenes_clu_3)
+
+# cluster 4
+selectedGenes_clu_4 <- rownames(clu_genes[[4]])
+selectedGenes_clu_4 <- gsub("bmalayi-", "",selectedGenes_clu_4)
+
+```
+
+```{r}
+
+# Create a binary gene list indicating if each gene is in the cluster of interest
+#cluster 1
+geneList_clu_1 <- factor(as.integer(allGenes %in% selectedGenes_clu_1), levels = c(0, 1))
+names(geneList_clu_1) <- allGenes
+
+#cluster 2
+geneList_clu_2 <- factor(as.integer(allGenes %in% selectedGenes_clu_2), levels = c(0, 1))
+names(geneList_clu_2) <- allGenes
+
+# cluster 3
+geneList_clu_3 <- factor(as.integer(allGenes %in% selectedGenes_clu_3), levels = c(0, 1))
+names(geneList_clu_3) <- allGenes
+
+# cluster 4
+geneList_clu_4 <- factor(as.integer(allGenes %in% selectedGenes_clu_4), levels = c(0, 1))
+names(geneList_clu_4) <- allGenes
+
+```
+
+## run topGO
+
+```{r}
+#cluster 1
+clu_1_GOdata_BP <- new("topGOdata", description="Pattern_1", ontology="BP", allGenes = geneList_clu_1, annot = annFUN.gene2GO, gene2GO = gene2GO) 
+
+clu_1_resultFisher_BP <- runTest(clu_1_GOdata_BP, algorithm="classic", statistic="fisher") 
+
+results_clu_1_BP <- GenTable(clu_1_GOdata_BP, classicFisher = clu_1_resultFisher_BP, orderBy = "resultFisher", ranksOf = "classicFisher", topNodes = 20, numChar = 5000)
+
+# Extract p-values from the resultFisher object
+resultScores_clu1 <- score(clu_1_resultFisher_BP)
+      
+# Add the p-values as a new column to the results dataframe
+results_clu_1_BP$p_value <- resultScores_clu1[results_clu_1_BP$GO.ID]
+results_clu_1_BP
+```
+
+```{r}
+#cluster 2
+clu_2_GOdata_BP <- new("topGOdata", description="Pattern_2", ontology="BP", allGenes = geneList_clu_2, annot = annFUN.gene2GO, gene2GO = gene2GO) 
+
+clu_2_resultFisher_BP <- runTest(clu_2_GOdata_BP, algorithm="classic", statistic="fisher") 
+
+results_clu_2_BP <- GenTable(clu_2_GOdata_BP, classicFisher = clu_2_resultFisher_BP, orderBy = "resultFisher", ranksOf = "classicFisher", topNodes = 20, numChar = 5000)
+
+# Extract p-values from the resultFisher object
+resultScores_clu2 <- score(clu_2_resultFisher_BP)
+      
+# Add the p-values as a new column to the results dataframe
+results_clu_2_BP$p_value <- resultScores_clu2[results_clu_2_BP$GO.ID]
+results_clu_2_BP
+```
+
+```{r}
+#cluster 3
+clu_3_GOdata_BP <- new("topGOdata", description="Pattern_3", ontology="BP", allGenes = geneList_clu_3, annot = annFUN.gene2GO, gene2GO = gene2GO) 
+
+clu_3_resultFisher_BP <- runTest(clu_3_GOdata_BP, algorithm="classic", statistic="fisher") 
+
+results_clu_3_BP <- GenTable(clu_3_GOdata_BP, classicFisher = clu_3_resultFisher_BP, orderBy = "resultFisher", ranksOf = "classicFisher", topNodes = 20, numChar = 5000)
+
+# Extract p-values from the resultFisher object
+resultScores_clu3 <- score(clu_3_resultFisher_BP)
+      
+# Add the p-values as a new column to the results dataframe
+results_clu_3_BP$p_value <- resultScores_clu3[results_clu_3_BP$GO.ID]
+results_clu_3_BP
+```
+
+```{r}
+#cluster 4
+clu_4_GOdata_BP <- new("topGOdata", description="Pattern_4", ontology="BP", allGenes = geneList_clu_4, annot = annFUN.gene2GO, gene2GO = gene2GO) 
+
+clu_4_resultFisher_BP <- runTest(clu_4_GOdata_BP, algorithm="classic", statistic="fisher") 
+
+results_clu_4_BP <- GenTable(clu_4_GOdata_BP, classicFisher = clu_4_resultFisher_BP, orderBy = "resultFisher", ranksOf = "classicFisher", topNodes = 20, numChar = 5000)
+
+# Extract p-values from the resultFisher object
+resultScores_clu4 <- score(clu_4_resultFisher_BP)
+      
+# Add the p-values as a new column to the results dataframe
+results_clu_4_BP$p_value <- resultScores_clu4[results_clu_4_BP$GO.ID]
+results_clu_4_BP
+```
+
+## view GO results
+
+```{r}
+GO_list <- list(results_clu_1_BP, results_clu_2_BP, results_clu_3_BP, results_clu_4_BP)
+```
+
+
+```{r}
+
+#GO enrichment plots for each cluster
+
+plot_list <- lapply(GO_list, function(cluster_results) {
+  
+  # Create a data frame with GO term and -log10(p-value)
+  plot_data <- data.frame(GO.Term = paste(cluster_results$GO.ID, cluster_results$Term, sep = ", "),
+                          neg_log_pval = -log10(cluster_results$p_value))
+  
+  # Order the data frame by -log10(p-value)
+  plot_data <- plot_data[order(plot_data$neg_log_pval, decreasing = TRUE), ]
+  top_10 <- head(plot_data, 10)
+  
+  # Create a bar plot using ggplot2
+  plot <- ggplot(top_10, aes(x = neg_log_pval, y = reorder(GO.Term, neg_log_pval))) +
+    geom_bar(stat = "identity", aes(fill = "#EF5B5B")) +
+    labs(x = "-log10(p-value)", y = "GO Term") +
+    geom_vline(xintercept = -log10(0.05), linetype = "dotted", color = "black") +
+    theme_minimal() +
+    theme(axis.text.y = element_text(hjust = 1, color = "black"),
+          panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+          axis.ticks = element_line(color = "black"),
+          axis.line = element_line(color = "black"),
+          plot.title = element_text(hjust = 0.5),
+          panel.background = element_blank(),  # Remove panel background
+          axis.ticks.length = unit(0.25, "cm"),  # Adjust the length of the tick marks if needed
+          axis.text.x = element_text(color = "black")) +  # Make x axis text black
+    coord_cartesian(xlim = c(0, 2.5))
+    
+  return(plot)
+})
+
+plot_list
+
+```
+
+# Save results
+
+## MFuzz
+```{r}
+
+#Supplementary Data 6
+
+clu_gene_core_list <- lapply(clu_genes, function(clu) {
+  
+  clu$NAME <- gsub("bmalayi-", "",clu$NAME)
+  
+  clu <- clu[, c("NAME", "MEM.SHIP")]
+  
+  colnames(clu) <- c("Gene", "Membership")
+  
+  return(clu)
+})
+
+clu_gene_core_list
+
+# Specify the Excel file name
+excel_file <- "Supplementary_Data_6.xlsx"
+
+# Create a new workbook
+wb_clu <- createWorkbook()
+
+# Add data frames as sheets
+addWorksheet(wb_clu, "Pattern_1")
+writeData(wb_clu, "Pattern_1", clu_gene_core_list[[1]])
+
+addWorksheet(wb_clu, "Pattern_2")
+writeData(wb_clu, "Pattern_2", clu_gene_core_list[[2]])
+
+addWorksheet(wb_clu, "Pattern_3")
+writeData(wb_clu, "Pattern_3", clu_gene_core_list[[3]])
+
+addWorksheet(wb_clu, "Pattern_4")
+writeData(wb_clu, "Pattern_4", clu_gene_core_list[[4]])
+
+# Save workbook to file
+saveWorkbook(wb_clu, "Supplementary_Data_6.xlsx", overwrite = TRUE)
+```
+
+```{r}
+#Supplementary Figure 2D
+
+group_names <- colnames(exprs(eset.s))
+
+pdf("Supplementary_Figure_2D.pdf", width = 10, height = 7, pointsize = 12)
+
+mfuzz.plot2(eset.s, cl=clu_4, time.labels=group_names, x11=FALSE, xlab="Wolbachia abundance group",mfrow=c(2,2), colo = "fancy")
+
+dev.off()
+```
+
+```{r}
+
+#Supplementary Figure 2D
+
+pdf("Supplementary_Figure_2D_bar.pdf", width = 10, height = 10, pointsize = 12)
+
+mfuzzColorBar(col="fancy",main="Membership",cex.main=1, horizontal=TRUE)
+
+dev.off()
+```
+
+## topGO 
+
+```{r}
+#save topGo plots
+arranged_plots <- plot_grid(plotlist = plot_list, ncol = 2, nrow = 2, align = "v")
+ggsave(file = "Supplementary_Figure_2E.pdf", plot = arranged_plots, dpi = 300, width = 17, height = 5) #Supplementary Figure 2E
+
+```
+
+```{r}
+
+#Supplementary Data 7
+
+#GO terms table for each cluster (top 30 terms)
+
+# Specify the Excel file name
+excel_file <- "Supplementary_Data_7.xlsx"
+
+# Create a new workbook
+wb <- createWorkbook()
+
+# Add data frames as sheets
+addWorksheet(wb, "Pattern_1")
+writeData(wb, "Pattern_1", GO_list[[1]])
+
+addWorksheet(wb, "Pattern_2")
+writeData(wb, "Pattern_2", GO_list[[2]])
+
+addWorksheet(wb, "Pattern_3")
+writeData(wb, "Pattern_3", GO_list[[3]])
+
+addWorksheet(wb, "Pattern_4")
+writeData(wb, "Pattern_4", GO_list[[4]])
+
+# Save workbook to file
+saveWorkbook(wb, "Supplementary_Data_7.xlsx", overwrite = TRUE)
+
+
+```
+
+# Check for genes
+
+## glycolysis genes
+```{r glycolysis genes names}
+
+glycolysis_genes <- c("WBGene00234007","WBGene00226800","WBGene00234111","WBGene00227349","WBGene00227350","WBGene00228818","WBGene00223396","WBGene00225841","WBGene00234141","WBGene00225232","WBGene00225960","WBGene00234100","WBGene00233578","WBGene00234226","WBGene00225601","WBGene00226459","WBGene00223851","WBGene00228293","WBGene00230482","WBGene00230483","WBGene00223624","WBGene00224939","WBGene00230488","WBGene00233072","WBGene00269278","WBGene00223126","WBGene00228134","WBGene00226573","WBGene00224695","WBGene00225076","WBGene00225490","WBGene00226192","WBGene00226849","WBGene00229624","WBGene00223600","WBGene00226903","WBGene00229687","WBGene00233045","WBGene00231340","WBGene00233943","WBGene00228214","WBGene00229261","WBGene00223797","WBGene00234093","WBGene00227890","WBGene00225448","WBGene00223299","WBGene00225708")
+  
+glycolysis_genes_rename <- paste0("bmalayi-", glycolysis_genes)
+
+```
+
+```{r}
+
+#glycolytic genes found in each cluster
+
+gly_overlap_list <- lapply(clu_gene_core_list, function(cluster_results) {
+  
+  inter <- intersect(rownames(cluster_results), glycolysis_genes_rename)
+  
+  return(cluster_results[inter,])
+    
+})
+
+gly_overlap_list
+
+```
+
+## Colocal genes
+```{r}
+
+coloca_de_genes <- readRDS(file = "/Users/hailey.sounart/Documents/brugia_malayi/220815_final_code/230214_repeat_with_new_section_names/brugia_colocal_wilcox_deseq2_p0.05_fc0.1_de_genes.rds")
+
+coloca_de_genes_rename <- paste0("bmalayi-", rownames(coloca_de_genes))
+
+```
+
+```{r}
+
+#colocalization genes found in each cluster
+
+colocal_overlap_list <- lapply(clu_gene_core_list, function(cluster_results) {
+  
+  inter <- intersect(rownames(cluster_results), coloca_de_genes_rename)
+  
+  return(cluster_results[inter,])
+  
+    
+})
+
+colocal_overlap_list
+
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+end_time <- Sys.time()
+end_time
+```
+
+```{r, include = TRUE, echo = TRUE, message = TRUE}
+
+elapsed_time <- round((end_time-start_time), 3)
+elapsed_time
+```
+
+Output is Supplementary Figure 2D-E plots and Supplementary Data 6,7. 

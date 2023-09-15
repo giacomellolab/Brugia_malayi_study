@@ -1,5 +1,5 @@
 ---
-title: "Load counts matrices and add metadata"
+title: "2_add_metadata_treated_worms"
 author: "Hailey Sounart"
 date: "2/28/2023"
 output: html_document
@@ -18,28 +18,14 @@ knitr::opts_chunk$set(include = TRUE, echo = TRUE, message = FALSE, warning =FAL
 ## Load packages
 ```{r load packages}
   library(STutility)
-  library(hdf5r)
-  library(imager)
-  library(akima)
-  library(plotly)
-  library(raster)
-  library(dplyr)
-  library(magrittr)
-  library(ggplot2)
-  library(imager) 
-  library(magrittr)
-  library(RColorBrewer)
-  library(stringr)
   library(openxlsx)
-  library(hash)
-  library(readxl)
-  library(purrr)
-  library(harmony)
 ```
 
 ```{r set working directory}
 
-setwd("<path to working directory>")
+#setwd("<path to working directory>")
+setwd("/Users/hailey.sounart/Documents/brugia_malayi/230911_final_code/r_scripts_treated_worms")
+
 ``` 
 
 Will use outputs from r_scripts/2_make_brugia_wolbachia_gene_lists.Rmd in this script.
@@ -208,7 +194,6 @@ all_sections_subset.section.labeled@meta.data
 
 ```
 
-
 ## Embedding technique
 
 Create embedding technique metadata column
@@ -238,6 +223,7 @@ all_sections_subset.section.labeled$worm_sample <- plyr::mapvalues(
 all_sections_subset.section.labeled@meta.data
 
 ```
+
 ## Treatment condition
 
 Create treatment condition metadata column
@@ -295,9 +281,9 @@ saveRDS(all_sections_subset.section.labeled, file = "bmalayi.treated.all.labeles
 
 ``` {r save labeled object with metadata}
 
-write.csv(all_sections_subset.section.labeled@meta.data[,], file = "Ctrl_treated_metadata.csv")
+write.csv(all_sections_subset.section.labeled@meta.data[,], file = "Ctrl_treated_spots_seurat_metadata.csv")
 
-write.xlsx(all_sections_subset.section.labeled@meta.data[,], file = "Ctrl_treated_metadata.xlsx", col.names=TRUE, row.names=TRUE)
+write.xlsx(all_sections_subset.section.labeled@meta.data[,], file = "Ctrl_treated_spots_seurat_metadata.xlsx", col.names=TRUE, row.names=TRUE)
 
 ```
 
@@ -514,9 +500,9 @@ saveRDS(all_sections_subset_QC, file = "bmalayi.treated.pre.filtered.rds")
 
 ``` {r save meta.data}
 
-write.csv(all_sections_subset_QC@meta.data[,], file = "Ctrl_treated_extended_metadata.csv")
+write.csv(all_sections_subset_QC@meta.data[,], file = "Ctrl_treated_spots_seurat_metadata_extended.csv")
 
-write.xlsx(all_sections_subset_QC@meta.data[,], file = "Ctrl_treated_extended_metadata.xlsx", col.names=TRUE, row.names=TRUE)
+write.xlsx(all_sections_subset_QC@meta.data[,], file = "Ctrl_treated_spots_seurat_metadata_extended.xlsx", col.names=TRUE, row.names=TRUE)
 
 ```
 
